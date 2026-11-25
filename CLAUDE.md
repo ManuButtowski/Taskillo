@@ -90,3 +90,8 @@ raíz del repositorio:
 cp .env.example .env     # una vez; los valores de ejemplo sirven en local
 pnpm install             # dependencias del monorepo
 ```
+pnpm test                # tests de la API (Vitest)
+pnpm typecheck           # comprobación de tipos
+pnpm build               # compila la API a apps/api/dist
+pnpm dev                 # API en http://localhost:3000 (lee .env)
+```
