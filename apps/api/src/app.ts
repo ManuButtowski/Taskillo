@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Database } from './db/client.js';
 import { health } from './routes/health.js';
 import { requestLogger, type Logger } from './lib/logger.js';
@@ -12,7 +12,7 @@ export interface AppDeps {
 }
 
 export function createApp(deps: AppDeps) {
-  const app = new Hono();
+  const app = new OpenAPIHono();
   app.use(requestLogger(deps.logger));
   app.route('/', health);
   app.onError((err, c) => {

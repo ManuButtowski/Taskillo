@@ -1,0 +1,12 @@
+{
+  "name": "contrato",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "generar": "tsx scripts/generar.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

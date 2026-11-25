@@ -98,4 +98,5 @@ pnpm build               # compila la API a apps/api/dist
 pnpm dev                 # API en http://localhost:3000 (lee .env)
 pnpm db:generate         # genera la migración SQL en apps/api/drizzle/ tras cambiar src/db/schema.ts
 pnpm db:migrate          # aplica las migraciones a DATABASE_URL (nunca drizzle-kit push)
+pnpm contrato            # regenera packages/contrato/openapi.json desde las rutas Zod (súbelo si cambia)
 ```
