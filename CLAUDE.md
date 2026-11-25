@@ -82,6 +82,11 @@ Comprueba de vez en cuando qué modelos incluye el plan Pro y cuánto consume ca
 
 ## Comandos
 
-Los comandos de build y tests se añadirán aquí en la spec 001, cuando existan
-`apps/api` y `apps/app`. En Windows, los scripts de Spec-Kit (`.specify/scripts/bash/`) se
-ejecutan con Git Bash, que Claude Code ya usa.
+Node 24 LTS y pnpm 11 (`.nvmrc` y `engines` lo fijan). En Windows, los scripts de Spec-Kit
+(`.specify/scripts/bash/`) se ejecutan con Git Bash, que Claude Code ya usa. Todo desde la
+raíz del repositorio:
+
+```bash
+cp .env.example .env     # una vez; los valores de ejemplo sirven en local
+pnpm install             # dependencias del monorepo
+```
