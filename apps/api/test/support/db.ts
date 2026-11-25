@@ -17,10 +17,21 @@ function sameDatabase(a: string, b: string): boolean {
   }
 }
 
+function databaseName(url: string): string {
+  try {
+    return decodeURIComponent(new URL(url).pathname.replace(/^\//, ''));
+  } catch {
+    return '';
+  }
+}
+
 /** Valida las URLs y devuelve la de tests. Lanza un error sin incluir ninguna URL (llevan credenciales). */
 export function assertTestDatabaseUrl(testUrl: string | undefined, databaseUrl: string | undefined): string {
   if (!testUrl) {
     throw new Error('Falta TEST_DATABASE_URL: los tests de base de datos necesitan su propia base');
+  }
+  if (!databaseName(testUrl).endsWith('_test')) {
+    throw new Error('El nombre de la base de TEST_DATABASE_URL debe terminar en _test');
   }
   if (databaseUrl && sameDatabase(testUrl, databaseUrl)) {
     throw new Error('TEST_DATABASE_URL no puede coincidir con DATABASE_URL');

@@ -14,10 +14,17 @@ describe('assertTestDatabaseUrl', () => {
   });
 
   it('se niega si coincide con DATABASE_URL (idéntica o misma base con otras credenciales)', () => {
-    expect(() => assertTestDatabaseUrl(prod, prod)).toThrow('no puede coincidir');
-    expect(() => assertTestDatabaseUrl('postgres://otro:otra@localhost:5433/taskillo?x=1', prod)).toThrow(
+    const prodTest = 'postgres://u:p@localhost:5433/taskillo_test';
+    expect(() => assertTestDatabaseUrl(prodTest, prodTest)).toThrow('no puede coincidir');
+    expect(() => assertTestDatabaseUrl('postgres://otro:otra@localhost:5433/taskillo_test?x=1', prodTest)).toThrow(
       'no puede coincidir',
     );
+  });
+
+  it('se niega si el nombre de la base no termina en _test', () => {
+    expect(() => assertTestDatabaseUrl(prod, undefined)).toThrow('_test');
+    expect(() => assertTestDatabaseUrl('postgres://u:p@localhost:5433/taskillo_test_x', prod)).toThrow('_test');
+    expect(() => assertTestDatabaseUrl('postgres://u:p@localhost:5433/', prod)).toThrow('_test');
   });
 
   it('no incluye ninguna URL en el mensaje de error', () => {
