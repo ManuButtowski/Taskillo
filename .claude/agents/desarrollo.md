@@ -38,8 +38,10 @@ comentarios y los commits; los identificadores del código van en inglés.
   borrado lógico siempre.
 - Hora de reloj: `DATE` + `TIME` + zona del usuario. `TIMESTAMPTZ` solo para alarmas.
 - Cada consulta del backend filtra por el `user_id` del token.
-- Ningún secreto en el código ni en los commits: todo por variables de entorno
-  (`.env`, que no se sube).
+- Ningún secreto en el código, en los commits ni en los logs: todo por variables de
+  entorno (`.env`, que no se sube). Cada variable nueva va también a `.env.example`.
+- Los servicios externos (correo, fotos) se usan a través de una interfaz propia, para que
+  cambiar de proveedor sea cambiar una variable de entorno.
 
 ## Cuándo parar y llamar al Director
 

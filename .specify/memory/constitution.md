@@ -1,12 +1,19 @@
 <!--
 Informe de impacto de sincronización
-- Versión: plantilla → 1.0.0 (ratificación inicial)
+- Versión: 1.0.0 → 1.1.0 (2026-11-25, MENOR)
+  - Hosting: Render sustituido por el VPS IONOS de DEVKOMP desde el MVP; despliegue con
+    GitHub Actions por SSH con clave.
+  - Correo: SMTP de IONOS (no-reply@devkomp.es) con Resend como alternativa tras la misma
+    interfaz; Mailpit en desarrollo.
+  - Sección nueva: "Secretos". Principio V ampliado.
+  - Decisión abierta del dominio sustituida por las tareas pendientes de Rafa.
+- Versión anterior: plantilla → 1.0.0 (ratificación inicial)
 - Principios añadidos: I–VIII (todos nuevos)
 - Secciones añadidas: Stack y restricciones técnicas, Reglas de datos y sincronización,
   Reglas de privacidad, Flujo de trabajo y agentes, Gobierno
 - Plantillas revisadas: plan-template.md ✅ (su "Constitution Check" se rellena con los
   principios de aquí), spec-template.md ✅, tasks-template.md ✅ (sin cambios de estructura)
-- Pendiente: dominio verificado para Resend (ver "Decisiones abiertas")
+- Pendiente: buzón, registros DNS y acceso SSH en IONOS (ver "Decisiones abiertas")
 -->
 
 # Constitución de Taskillo
@@ -45,15 +52,16 @@ La app abre y funciona sin conexión y sincroniza al volver la red.
 
 - Toda escritura se guarda primero en SQLite local (`drift`) y se encola para el servidor.
 - Los IDs se generan en el cliente (UUIDv7).
-- La app tolera que el servidor tarde en despertar (Render free): muestra un indicador
-  discreto de "sincronizando" y nunca un bloqueo.
+- La app tolera que el servidor no responda o tarde: muestra un indicador discreto de
+  "sincronizando" y nunca un bloqueo.
 
 ### IV. Coste 0 €
 
 Nada que requiera un pago obligatorio.
 
-- Solo servicios con capa gratuita: Neon, Cloudflare R2, Resend, Render, GitHub Actions,
-  Firebase Cloud Messaging.
+- Solo servicios gratuitos o ya pagados por otros: VPS e SMTP de IONOS (cedidos por
+  DEVKOMP), Neon, Cloudflare R2, GitHub Actions y GitHub Container Registry, Firebase
+  Cloud Messaging y, como alternativa de correo, Resend.
 - Al empezar cada fase se revisan los límites de las capas gratuitas, porque cambian.
 - Toda dependencia nueva de pago, o con riesgo de serlo, necesita aprobación expresa de
   Manuel y queda anotada en `.claude/informes/`.
@@ -63,10 +71,13 @@ Nada que requiera un pago obligatorio.
 Solo PostgreSQL estándar y almacenamiento compatible con S3.
 
 - Nada de extensiones o funciones propias de Neon. Extensiones permitidas: `citext`.
-- El backend corre igual en Render, en Docker Compose local y en el VPS.
-- Migrar al VPS es `pg_dump` + `pg_restore` + cambiar la cadena de conexión, sin tocar
-  código.
-- La configuración llega por variables de entorno; ningún secreto en el repositorio.
+- El backend corre igual en Docker Compose local y en el VPS.
+- Pasar la base de datos de Neon al PostgreSQL del VPS es `pg_dump` + `pg_restore` +
+  cambiar la cadena de conexión, sin tocar código.
+- Los servicios externos (correo, fotos) se usan a través de una interfaz propia, para
+  poder cambiar de proveedor con una variable de entorno. Por ejemplo, el correo va por
+  SMTP de IONOS o por Resend sin tocar el código.
+- La configuración llega por variables de entorno (ver "Secretos").
 
 ### VI. Alcance mínimo
 
@@ -113,9 +124,10 @@ El backend (TypeScript) y la app (Dart) no comparten código, así que comparten
 | Base de datos | PostgreSQL 16: Neon (nube) y Docker Compose (local) |
 | Fotos | Cloudflare R2 con URLs prefirmadas (Fase 2 y 4) |
 | Autenticación | Propia: Argon2id + JWT de acceso de 15 min + refresh token opaco rotativo de 30 días |
-| Correo | Resend (dominio de pruebas en desarrollo) |
+| Correo | SMTP de IONOS (`smtp.ionos.es:587`, STARTTLS) desde `no-reply@devkomp.es`; Resend como alternativa tras la misma interfaz; Mailpit en desarrollo |
 | Push de datos a Android | Firebase Cloud Messaging (Fase 2) |
-| Hosting | Render free durante el MVP; después VPS con Docker Compose |
+| Hosting | VPS IONOS de DEVKOMP desde el MVP: Docker Compose tras un proxy con HTTPS (Let's Encrypt), en un subdominio de `devkomp.es`. Base de datos en Neon |
+| Despliegue | GitHub Actions: imagen en GitHub Container Registry y despliegue por SSH con clave dedicada |
 | CI | GitHub Actions: tests + APK en Linux en cada cambio; build de Windows solo en releases. Plan B: hook `pre-push` local |
 
 **Estructura del monorepo:**
@@ -124,7 +136,7 @@ El backend (TypeScript) y la app (Dart) no comparten código, así que comparten
 apps/api/            Backend Hono + Drizzle + migraciones
 apps/app/            App Flutter (PC + Android)
 packages/contrato/   OpenAPI y esquemas compartidos
-docker-compose.yml   PostgreSQL 16 + API para desarrollo local y VPS
+docker-compose.yml   PostgreSQL 16 + API + Mailpit en local; API + proxy en el VPS
 specs/               Una carpeta por spec de Spec-Kit
 docs/                Especificación funcional
 ```
@@ -152,6 +164,20 @@ docs/                Especificación funcional
 - **Alarmas:** locales en cada dispositivo, una por tarea, programadas a 14 días vista y
   como máximo 400 pendientes en Android.
 - **Cada consulta del backend filtra por el `user_id` del token.**
+
+## Secretos
+
+- **Ningún secreto en el repositorio**: ni en el código, ni en los commits, ni en los
+  logs, ni en los informes. QA lo comprueba en cada revisión.
+- **Local:** `.env` (ignorado por Git) a partir de `.env.example`, que sí se sube con
+  todas las variables y valores de ejemplo. Cada variable nueva se añade a
+  `.env.example` en la misma tarea.
+- **CI y despliegue:** secretos de GitHub Actions (clave SSH de despliegue, host y usuario
+  del VPS).
+- **Producción:** `.env` en el VPS, legible solo por el usuario de Taskillo.
+- **Acceso al VPS:** solo con clave SSH, con un usuario propio de Taskillo sin
+  privilegios; nunca con contraseña. La clave privada de despliegue vive solo en los
+  secretos de GitHub.
 
 ## Reglas de privacidad (Fase 4, contrato crítico)
 
@@ -195,8 +221,14 @@ Resumen de §5.5 de la especificación, que manda en caso de duda:
 
 ## Decisiones abiertas
 
-- Dominio verificado para Resend (subdominio de DEVKOMP o dominio propio). Necesario solo
-  antes de abrir la app a otras personas; mientras tanto se usa el dominio de pruebas.
+Dependen de Rafa (DEVKOMP), desde el panel de IONOS. Mientras tanto se desarrolla en local
+con Docker Compose y Mailpit.
+
+- Crear el buzón `no-reply@devkomp.es`.
+- Comprobar SPF, DKIM y DMARC de `devkomp.es` (antes de enviar correos a otras personas).
+- Crear el subdominio de la API apuntando al VPS (antes del primer despliegue).
+- Crear el usuario de Taskillo en el VPS con acceso por clave SSH (antes del primer
+  despliegue).
 
 ## Gobierno
 
@@ -211,4 +243,4 @@ Resumen de §5.5 de la especificación, que manda en caso de duda:
   excepción se justifica en la tabla "Complexity Tracking" del plan.
 - La guía de trabajo diaria está en `CLAUDE.md`.
 
-**Versión**: 1.0.0 | **Ratificada**: 2026-11-25 | **Última enmienda**: 2026-11-25
+**Versión**: 1.1.0 | **Ratificada**: 2026-11-25 | **Última enmienda**: 2026-11-25

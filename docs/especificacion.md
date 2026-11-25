@@ -1,8 +1,10 @@
-# TASKILLO — Especificación funcional y técnica (v2.0)
+# TASKILLO — Especificación funcional y técnica (v2.1)
 
 > **Propósito:** fuente única de verdad para desarrollar Taskillo con **Spec-Kit (SDD)** y un harness de agentes en **Claude Code (plan Pro)**, con **presupuesto 0 €**.
 >
 > **Cambios respecto a la v1.0 (borrador con Gemini):** MVP recortado por fases, iOS fuera del MVP, stack de frontend simplificado (una sola cadena de compilación), datos en Neon + Cloudflare R2, esquema corregido (hora de inicio + duración, excepciones de recurrencia, dispositivos, sesiones, borrado lógico y versionado para sincronizar sin conexión), puntos anti-abuso, asistente con parser local primero y harness ahorrador.
+>
+> **Cambios en la v2.1 (2026-11-25):** el backend se despliega desde el MVP en el VPS IONOS de DEVKOMP (Render queda descartado), el correo sale por el SMTP de IONOS desde `no-reply@devkomp.es` (Resend queda como alternativa detrás de la misma interfaz) y se añade la gestión de secretos (§4.6). Ya no hace falta comprar dominio.
 >
 > **Leyenda:**
 > - ✅ **DECIDIDO**: acordado con Manuel.
@@ -50,7 +52,7 @@ Cada módulo indica la fase en la que entra.
 ### M01. Cuenta y perfil — Fase 1 (Google y foto en Fase 2)
 
 - **Registro e inicio de sesión con correo y contraseña.** Contraseña con hash `Argon2id`. Verificación de correo y recuperación de contraseña por enlace.
-  - ✅ **DECIDIDO (2026-11-24) — correos con Resend** (capa gratuita). En desarrollo se usa su dominio de pruebas, que solo entrega al correo de la propia cuenta de Resend; basta para probar los flujos. Para enviar a cualquier usuario hace falta un dominio verificado (ver decisiones pendientes).
+  - ✅ **DECIDIDO (2026-11-25) — correo por el SMTP de IONOS** (`smtp.ionos.es:587`, STARTTLS) desde un buzón dedicado `no-reply@devkomp.es`, incluido en el alojamiento de DEVKOMP (0 €). El backend envía a través de una interfaz propia de envío con dos implementaciones: SMTP (la de uso) y **Resend** (alternativa, por si el SMTP da problemas de entrega o de límites). Se cambia con una variable de entorno, sin tocar el código. En desarrollo los correos se capturan en local con Mailpit (Docker Compose), sin enviar nada fuera.
 - **Login con Google (Fase 2).** OpenID Connect validado en el backend. Si el correo ya existe y está verificado, se vincula a la misma cuenta.
 - **Perfil:** cambiar nombre visible, foto (Fase 2) y contraseña (solo cuentas con contraseña). Cerrar sesión en un dispositivo o en todos.
 - **Estadísticas en el perfil (Fase 3):** copas totales y por grupo, racha actual y máxima 🔥, gráficos mensual y anual.
@@ -211,11 +213,11 @@ Cada módulo indica la fase en la que entra.
 | **Base de datos** | **Neon** (PostgreSQL gestionado, capa gratuita) | ✅ **DECIDIDO** |
 | **Fotos** | **Cloudflare R2** con URLs prefirmadas | ✅ **DECIDIDO** |
 | **Autenticación** | Propia: Argon2id + token de acceso JWT corto + refresh token rotativo | ✅ **DECIDIDO** |
-| **Correo transaccional** | **Resend** (dominio de pruebas en desarrollo) | ✅ **DECIDIDO** |
+| **Correo transaccional** | **SMTP de IONOS** desde `no-reply@devkomp.es`; Resend como alternativa tras la misma interfaz; Mailpit en desarrollo | ✅ **DECIDIDO** (2026-11-25) |
 | **Push de datos a Android** | Firebase Cloud Messaging (gratis) | Fase 2 |
-| **Desarrollo local** | Docker Compose (PostgreSQL 16 + API) | ✅ |
-| **Hosting del backend en el MVP** | **Render** (web service gratis) + Neon; después, VPS | ✅ **DECIDIDO** |
-| **Hosting tras el MVP** | VPS IONOS del amigo, si lo cede, con Docker Compose | ✅ (pospuesto) |
+| **Desarrollo local** | Docker Compose (PostgreSQL 16 + API + Mailpit) | ✅ |
+| **Hosting del backend** | **VPS IONOS de DEVKOMP** desde el MVP, con Docker Compose; base de datos en Neon | ✅ **DECIDIDO** (2026-11-25) |
+| **Despliegue** | GitHub Actions por SSH con clave, usando secretos de GitHub | ✅ **DECIDIDO** (2026-11-25) |
 | **CI** | GitHub Actions: tests y APK de Android en Linux en cada cambio; build de Windows solo al publicar versión. Si se agotan los minutos gratuitos (repositorio privado), los tests pasan a un hook `pre-push` local | ✅ **DECIDIDO** |
 
 ### 4.2. Frontend: Flutter ✅ DECIDIDO
@@ -246,12 +248,27 @@ La v1.0 proponía Svelte + Tauri (PC) + Capacitor (móvil) + Kotlin + Swift: cin
 ### 4.4. Infraestructura a 0 €
 
 - **Desarrollo:** todo en local con Docker Compose (PostgreSQL 16 + API). Neon se usa como base de datos "en la nube" cuando haga falta probar desde el móvil fuera de casa.
-- **Backend online durante el MVP:** ✅ **DECIDIDO (2026-11-24) — Render**, hasta pasar al VPS. Opciones que se valoraron:
-  - **Render (web service gratis) + Neon:** Node.js normal, sin cambios. Se duerme tras 15 min sin uso y tarda en torno a un minuto en despertar. Aceptable para un MVP personal.
-  - **Cloudflare Workers + Neon (driver serverless):** no se duerme y hay 100.000 peticiones al día gratis. Ojo: el plan gratuito limita el tiempo de CPU por petición (unos 10 ms), y Argon2id tarda bastante más, así que el login necesitaría otra estrategia o el plan de pago. Por eso no lo recomiendo para la API completa.
-  - Como Render se duerme, la app debe tolerar la primera petición lenta: abre al instante con los datos locales (SQLite) y sincroniza cuando el servidor despierta, mostrando un indicador discreto de "sincronizando".
+- **Backend online:** ✅ **DECIDIDO (2026-11-25) — VPS IONOS de DEVKOMP desde el MVP**, con permiso de Rafa (DEVKOMP). Sustituye a Render, que se dormía tras 15 min sin uso.
+  - La API corre en Docker Compose detrás de un proxy inverso con HTTPS automático (Let's Encrypt), en un subdominio de `devkomp.es` (por ejemplo `api.taskillo.devkomp.es`).
+  - **Base de datos:** se mantiene en **Neon**. Así el VPS de DEVKOMP no carga con PostgreSQL ni con sus copias de seguridad, y la base sigue accesible desde el desarrollo local. Si más adelante conviene, se pasa al PostgreSQL del VPS con `pg_dump` + `pg_restore` y cambiando la cadena de conexión, sin tocar código.
+  - **Convivencia con el servidor de DEVKOMP:** usuario propio sin privilegios para Taskillo, límites de memoria y CPU en los contenedores, solo los puertos 80/443 abiertos y logs con rotación.
+  - Aunque el servidor ya no se duerme, la app sigue tolerando que no responda: abre al instante con los datos locales (SQLite) y sincroniza cuando vuelve, con un indicador discreto de "sincronizando".
+- **Despliegue (✅ DECIDIDO 2026-11-25):** desde GitHub Actions.
+  - El acceso al VPS pasa de contraseña a **clave SSH**: una clave dedicada al despliegue, con un usuario propio en el VPS. La clave privada vive solo en los secretos de GitHub.
+  - Flujo: al fusionar en `main` (o al publicar versión), Actions construye la imagen Docker de la API, la publica en GitHub Container Registry, entra por SSH en el VPS y ejecuta `docker compose pull && docker compose up -d`. Las migraciones de Drizzle se aplican en ese paso.
+  - Plan B si se agotan los minutos gratuitos: el mismo script de despliegue se lanza a mano desde el PC.
+- **Valorado y descartado:** Render (se duerme) y Cloudflare Workers (el plan gratuito limita el CPU por petición a unos 10 ms y Argon2id tarda bastante más).
 - **Fotos:** Cloudflare R2 (10 GB gratis, salida de datos sin coste). Límites a revisar al empezar la Fase 2.
-- **Migración al VPS tras el MVP:** `pg_dump` desde Neon, `pg_restore` en el PostgreSQL del VPS, cambiar la cadena de conexión y desplegar la API con el mismo `docker-compose.yml`. R2 se puede mantener o sustituir por almacenamiento local o MinIO (compatible S3) sin tocar el código. Requisitos al amigo: usuario propio, firewall, copias de seguridad y límites de recursos para no afectar a su servidor.
+- **Portabilidad:** R2 se puede sustituir por almacenamiento local o MinIO (compatible S3) sin tocar el código, y Neon por el PostgreSQL del VPS con `pg_dump`.
+- **Correo:** buzón `no-reply@devkomp.es` en el SMTP de IONOS. Antes de enviar a otras personas hay que comprobar que `devkomp.es` tiene SPF, DKIM y DMARC bien configurados, para que los correos no acaben en spam.
+
+### 4.6. Secretos ✅ DECIDIDO (2026-11-25)
+
+- **Nunca en el repositorio.** Ni en el código, ni en los commits, ni en los logs.
+- **Local:** fichero `.env` (ignorado por Git) a partir de un `.env.example` que sí se sube, con todas las variables y valores de ejemplo.
+- **CI y despliegue:** secretos de GitHub Actions (clave SSH de despliegue, host y usuario del VPS).
+- **Producción:** fichero `.env` en el VPS, legible solo por el usuario de Taskillo (cadena de Neon, secreto JWT, credenciales SMTP, claves de R2).
+- Cambiar un secreto (por ejemplo, la contraseña del buzón) no exige tocar código: se cambia en el `.env` del VPS y se reinicia la API.
 
 ### 4.5. Autenticación
 
@@ -595,7 +612,12 @@ Con el plan Pro, tres agentes trabajando en cada paso agotan el límite de uso m
 
 | # | Decisión | Opciones | Recomendación |
 | :--- | :--- | :--- | :--- |
-| 1 | Dominio para enviar correos con Resend (necesario antes de abrir la app a otros usuarios) | Subdominio del dominio de DEVKOMP (por ejemplo `taskillo.<dominio>`) / dominio propio | Subdominio de DEVKOMP si lo permiten, porque mantiene el coste en 0 €. Un dominio propio cuesta unos 10 € al año y rompe el presupuesto 0 €. |
+| 1 | Crear el buzón `no-reply@devkomp.es` en el panel de IONOS | Lo hace Rafa | Necesario antes de probar el correo real; en desarrollo basta con Mailpit. |
+| 2 | Comprobar SPF, DKIM y DMARC de `devkomp.es` | Rafa o Manuel desde el panel de IONOS | Necesario antes de enviar correos a otras personas. |
+| 3 | Subdominio para la API (por ejemplo `api.taskillo.devkomp.es`) apuntando al VPS | Rafa, registro DNS en IONOS | Necesario para el HTTPS y antes del primer despliegue. |
+| 4 | Usuario y clave SSH de despliegue en el VPS | Rafa crea el usuario; Manuel genera la clave | Necesario antes del primer despliegue desde GitHub Actions. |
+
+Ya no hace falta comprar un dominio: el correo y la API usan `devkomp.es`.
 
 ## 8. Resumen de suposiciones
 

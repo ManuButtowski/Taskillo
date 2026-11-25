@@ -1,7 +1,8 @@
 # Taskillo · guía para Claude Code
 
 Gestor de tareas personal con gamificación y red social. App Flutter (Windows primero +
-Android) y backend TypeScript + Hono + Drizzle sobre PostgreSQL (Neon). Presupuesto 0 €.
+Android) y backend TypeScript + Hono + Drizzle sobre PostgreSQL (Neon), desplegado en el
+VPS IONOS de DEVKOMP. Correo por SMTP de IONOS. Presupuesto 0 €.
 
 - **Reglas que no se negocian:** `.specify/memory/constitution.md`.
 - **Especificación funcional completa:** `docs/especificacion.md` (léela por secciones, no
@@ -63,6 +64,15 @@ Comprueba de vez en cuando qué modelos incluye el plan Pro y cuánto consume ca
 - El Director lee specs y planes, no el repositorio entero.
 - QA ejecuta solo los tests afectados mientras se corrige y la batería completa al cerrar.
 - No lances agentes en paralelo: con el plan Pro el límite de uso se agota enseguida.
+
+## Secretos
+
+- Nunca escribas un secreto en el código, en un commit, en un log ni en un informe.
+- Las variables van en `.env` (ignorado por Git). Cada variable nueva se añade a
+  `.env.example` con un valor de ejemplo, en la misma tarea.
+- Los secretos de despliegue (clave SSH, host y usuario del VPS) viven en los secretos de
+  GitHub Actions; los de producción, en el `.env` del VPS.
+- No leas `.env` (está bloqueado en `.claude/settings.json`); usa `.env.example`.
 
 ## Comandos
 
