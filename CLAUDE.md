@@ -89,7 +89,8 @@ raíz del repositorio:
 ```bash
 cp .env.example .env     # una vez; los valores de ejemplo sirven en local
 pnpm install             # dependencias del monorepo
-```
+docker compose up -d postgres mailpit   # PostgreSQL 16 (:5432) y Mailpit (web :8025, SMTP :1025)
+docker compose up --build api           # API en contenedor, http://localhost:3000/health
 pnpm test                # tests de la API (Vitest)
 pnpm typecheck           # comprobación de tipos
 pnpm build               # compila la API a apps/api/dist

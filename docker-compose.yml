@@ -1,0 +1,49 @@
+# Entorno local: PostgreSQL 16, Mailpit (correo capturado) y la API.
+# Las variables salen de .env (copia de .env.example); los valores por defecto sirven en local.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taskillo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskillo}
+      POSTGRES_DB: ${POSTGRES_DB:-taskillo}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # interfaz web
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:3000}
+      TRUST_PROXY: "false"
+      DATABASE_URL: postgres://${POSTGRES_USER:-taskillo}:${POSTGRES_PASSWORD:-taskillo}@postgres:5432/${POSTGRES_DB:-taskillo}
+      JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET en .env}
+      MAIL_DRIVER: smtp
+      MAIL_FROM: ${MAIL_FROM:-Taskillo <no-reply@devkomp.es>}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_SECURE: "false"
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

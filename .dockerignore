@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+apps/app
+.claude
+.specify
+specs
+docs
