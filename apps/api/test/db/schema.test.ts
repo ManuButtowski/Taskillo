@@ -1,19 +1,9 @@
 // Restricciones del esquema de la spec 001 contra un PostgreSQL real (migración 0000).
-// Infraestructura mínima de T004: la base sale de TEST_DATABASE_URL; T005 la generaliza
-// (negativa a arrancar, migraciones al empezar, limpieza entre tests) para el resto de tests.
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createDb, type Database } from '../../src/db/client.js';
+import type { Database } from '../../src/db/client.js';
 import { users } from '../../src/db/schema.js';
-import { runMigrations } from '../../src/migrate.js';
-
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-if (!TEST_DATABASE_URL) {
-  throw new Error('Falta TEST_DATABASE_URL: los tests de base de datos necesitan su propia base');
-}
-if (TEST_DATABASE_URL === process.env.DATABASE_URL) {
-  throw new Error('TEST_DATABASE_URL no puede coincidir con DATABASE_URL');
-}
+import { setupTestDb, truncateAll } from '../support/db.js';
 
 const hex64 = () => createHash('sha256').update(randomBytes(16)).digest('hex');
 const ARGON = '$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$aGFzaA';
@@ -61,19 +51,12 @@ function insertEmailToken(
 }
 
 beforeAll(async () => {
-  // Base exclusiva de tests: se parte de cero y se aplica la migración real.
-  const admin = createDb(TEST_DATABASE_URL, { max: 1, onnotice: () => {} });
-  await admin.client.unsafe(
-    'DROP SCHEMA IF EXISTS drizzle CASCADE; DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;',
-  );
-  await admin.client.end();
-  await runMigrations(TEST_DATABASE_URL, { onnotice: () => {} });
-  db = createDb(TEST_DATABASE_URL, { onnotice: () => {} });
+  db = await setupTestDb();
   sql = db.client;
 });
 
 beforeEach(async () => {
-  await sql`TRUNCATE users, devices, sessions, email_tokens CASCADE`;
+  await truncateAll(sql);
 });
 
 afterAll(async () => {

@@ -8,10 +8,12 @@ esta guía necesita IONOS: el correo se captura en Mailpit y la base de datos es
 rama de desarrollo de Neon.
 
 1. `cp .env.example .env` y ajustar solo si hace falta (los valores de ejemplo funcionan en local).
-   - Base de datos: **PostgreSQL 16 en Docker** (`docker compose up -d postgres`), la vía
+   - Base de datos: **PostgreSQL 16 en Docker** (`docker compose up -d postgres`, publicado en
+     el puerto **5433** del PC para no chocar con un PostgreSQL local en el 5432), la vía
      elegida. Alternativa si Docker no está disponible: una rama de desarrollo de Neon
      (`DATABASE_URL` con su cadena y `sslmode=require`), nunca la de producción.
-   - `TEST_DATABASE_URL` apunta a **otra** base de datos (los tests la vacían en cada ejecución).
+   - `TEST_DATABASE_URL` apunta a **otra** base de datos (`taskillo_test`; los tests la vacían en
+     cada ejecución). Con volumen nuevo se crea sola; si el volumen ya existía, `pnpm db:test:crear`.
    - Correo: `MAIL_DRIVER=smtp` hacia Mailpit (`SMTP_HOST=localhost`, `SMTP_PORT=1025`, sin
      TLS ni credenciales), con Docker (`docker compose up -d mailpit`).
 2. `pnpm install`.

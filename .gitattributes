@@ -1,0 +1,14 @@
+# Finales de línea: LF en todo lo que se ejecuta en Linux (Docker, CI, VPS).
+* text=auto
+*.sql text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+Dockerfile text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+# Binarios
+*.png binary
+*.jpg binary
+*.ico binary

@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
+    "db:test:crear": "docker compose -f ../../docker-compose.yml exec -T postgres sh /docker-entrypoint-initdb.d/01-crear-bd-test.sh",
     "db:migrate": "tsx --env-file-if-exists=../../.env src/migrate.ts"
   },
   "dependencies": {
