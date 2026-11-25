@@ -1,6 +1,6 @@
 ---
 name: qa
-description: QA de Taskillo. Úsalo al terminar un bloque de tareas (no tras cada una) y al cerrar una spec: ejecuta los tests, revisa criterios de aceptación y casos límite (zonas horarias, meses cortos, medianoche, conflictos sin conexión, fugas de privacidad) y emite un informe PASS o FAIL con pasos para reproducir. No corrige el código.
+description: "QA de Taskillo. Úsalo al terminar un bloque de tareas (no tras cada una) y al cerrar una spec: ejecuta los tests, revisa criterios de aceptación y casos límite (zonas horarias, meses cortos, medianoche, conflictos sin conexión, fugas de privacidad) y emite un informe PASS o FAIL con pasos para reproducir. No corrige el código."
 tools: Read, Grep, Glob, Bash, Write
 model: sonnet
 ---
