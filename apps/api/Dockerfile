@@ -23,6 +23,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /repo/apps/api/dist ./dist
+COPY --from=build /repo/apps/api/drizzle ./drizzle
 COPY --from=build /repo/apps/api/package.json ./package.json
 USER node
 EXPOSE 3000
