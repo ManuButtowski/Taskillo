@@ -17,4 +17,8 @@ y un harness de agentes de Claude Code (Director, Desarrollo, QA y Redactor).
 ## Stack
 
 Flutter (Windows + Android) · TypeScript + Hono + Drizzle · PostgreSQL (Neon) · Cloudflare R2 ·
-Resend · Render (MVP) y después VPS. Presupuesto: 0 €.
+correo por SMTP de IONOS (Resend como alternativa) · API en el VPS IONOS de DEVKOMP,
+desplegada con GitHub Actions. Presupuesto: 0 €.
+
+Los secretos nunca se suben: copia `.env.example` a `.env` y rellénalo (ver la sección
+"Secretos" de la constitución).

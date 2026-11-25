@@ -85,7 +85,7 @@ quitar el modo avión y comprobar ambos lados.
    otro dispositivo los recibe.
 3. **Given** un grupo borrado en el PC mientras el móvil estaba sin conexión, **When** el
    móvil reconecta, **Then** el grupo desaparece del móvil.
-4. **Given** el servidor dormido (Render free), **When** la app sincroniza, **Then** muestra
+4. **Given** el servidor no responde o tarda, **When** la app sincroniza, **Then** muestra
    un indicador discreto de "sincronizando" y la app sigue usable.
 
 ---

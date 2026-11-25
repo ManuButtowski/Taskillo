@@ -49,8 +49,8 @@ enlace de recuperación y elige una nueva.
 **Why this priority**: la recuperación evita perder la cuenta; la verificación es requisito
 para vincular Google en la Fase 2.
 
-**Independent Test**: con el dominio de pruebas de Resend (solo entrega al correo de la
-cuenta de Resend), recibir ambos correos y completar los dos flujos.
+**Independent Test**: en local, recibir ambos correos en Mailpit y completar los dos
+flujos. Cuando exista el buzón `no-reply@devkomp.es`, repetirlo con el SMTP de IONOS.
 
 **Acceptance Scenarios**:
 
@@ -114,8 +114,8 @@ comprueba que la segunda falla y revoca la familia.
 
 ### Edge Cases
 
-- El servidor de Render está dormido (hasta ~1 min en despertar): el registro y el login
-  muestran un estado de espera claro, sin bloquear la app si ya había sesión.
+- El servidor no responde o tarda (VPS caído o en despliegue): el registro y el login
+  muestran un estado de espera o error claro, sin bloquear la app si ya había sesión.
 - Sin conexión y con sesión iniciada: la app abre con normalidad; la renovación del token
   se pospone hasta que vuelva la red.
 - Sin conexión y sin sesión: el registro y el login muestran que hace falta conexión.
@@ -155,12 +155,23 @@ comprueba que la segunda falla y revoca la familia.
 - **FR-012**: El usuario MUST poder cambiar su nombre visible y su contraseña.
 - **FR-013**: El sistema MUST limitar la frecuencia de intentos de login, registro y
   recuperación.
-- **FR-014**: El correo transaccional MUST enviarse con Resend, configurado por variables de
-  entorno; en desarrollo con su dominio de pruebas.
+- **FR-014**: El correo transaccional MUST enviarse a través de una interfaz propia de
+  envío con dos implementaciones: SMTP (la de uso: `smtp.ionos.es:587` con STARTTLS desde
+  `no-reply@devkomp.es`) y Resend (alternativa). La implementación y sus credenciales se
+  eligen con variables de entorno, sin tocar el código. En desarrollo, el SMTP apunta a
+  Mailpit en Docker Compose.
 - **FR-015** *(base del monorepo)*: El repositorio MUST quedar con `apps/api` (Hono +
   Drizzle), `apps/app` (Flutter, Windows + Android), `packages/contrato` (OpenAPI generado
   desde Zod), `docker-compose.yml` (PostgreSQL 16 + API) y un flujo de GitHub Actions que
   ejecuta los tests y compila el APK en Linux.
+- **FR-016** *(despliegue)*: Un flujo de GitHub Actions MUST desplegar la API en el VPS IONOS
+  de DEVKOMP: construir la imagen Docker, publicarla en GitHub Container Registry, entrar
+  por SSH con una clave dedicada y ejecutar `docker compose pull && docker compose up -d`,
+  aplicando las migraciones. La API queda tras un proxy con HTTPS en un subdominio de
+  `devkomp.es`. La base de datos sigue en Neon.
+- **FR-017** *(secretos)*: Ningún secreto MUST estar en el repositorio. El repositorio
+  incluye `.env.example` con todas las variables; los valores reales van en `.env` local,
+  en los secretos de GitHub y en el `.env` del VPS.
 
 ### Key Entities
 
@@ -179,8 +190,7 @@ comprueba que la segunda falla y revoca la familia.
 
 ### Measurable Outcomes
 
-- **SC-001**: Un usuario nuevo crea su cuenta y entra en la app en menos de 1 minuto (con el
-  servidor despierto).
+- **SC-001**: Un usuario nuevo crea su cuenta y entra en la app en menos de 1 minuto.
 - **SC-002**: Tras "cerrar sesión en todos los dispositivos", ningún refresh token anterior
   vale (criterio de aceptación del MVP, §6.3).
 - **SC-003**: Reutilizar un refresh token rotado revoca su familia en el 100 % de los tests.
@@ -190,8 +200,11 @@ comprueba que la segunda falla y revoca la familia.
 
 ## Assumptions
 
-- El correo solo llega a la cuenta de Resend mientras no haya dominio verificado (decisión
-  abierta en la constitución); basta para probar los flujos.
+- Mientras Rafa no cree el buzón `no-reply@devkomp.es` ni el subdominio de la API, todo se
+  prueba en local (Mailpit y Docker Compose). El despliegue (FR-016) puede quedar listo y
+  probarse en cuanto estén el subdominio y el usuario SSH.
+- Antes de enviar correos a otras personas se comprueban SPF, DKIM y DMARC de
+  `devkomp.es`.
 - Los enlaces de verificación y recuperación abren una página sencilla servida por la API;
   no hace falta "deep linking" en la app para el MVP.
 - La política de contraseña mínima (longitud y lista de contraseñas comunes) la fija el
