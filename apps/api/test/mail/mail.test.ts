@@ -1,3 +1,4 @@
+import { connect } from 'node:net';
 import { describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '../../src/config.js';
 import { createMailer } from '../../src/mail/index.js';
@@ -93,16 +94,30 @@ describe('ResendMailer (fetch simulado)', () => {
   });
 });
 
-// Envío real contra el Mailpit de Docker (SMTP 1025, API 8025). Se omite si no está disponible.
+// Envío real contra el Mailpit de Docker (API web en MAILPIT_URL, SMTP 1025 en el mismo host).
+// Se omite si la API web o el puerto SMTP no responden.
 const MAILPIT_URL = process.env.MAILPIT_URL ?? 'http://localhost:8025';
-const mailpitUp = await fetch(`${MAILPIT_URL}/api/v1/info`, { signal: AbortSignal.timeout(1500) })
-  .then((r) => r.ok)
-  .catch(() => false);
+const MAILPIT_HOST = new URL(MAILPIT_URL).hostname;
+const MAILPIT_SMTP_PORT = 1025;
+
+function tcpOpen(host: string, port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = connect({ host, port, timeout: 1500 });
+    socket.once('connect', () => (socket.destroy(), resolve(true)));
+    socket.once('timeout', () => (socket.destroy(), resolve(false)));
+    socket.once('error', () => resolve(false));
+  });
+}
+
+const mailpitUp =
+  (await fetch(`${MAILPIT_URL}/api/v1/info`, { signal: AbortSignal.timeout(1500) })
+    .then((r) => r.ok)
+    .catch(() => false)) && (await tcpOpen(MAILPIT_HOST, MAILPIT_SMTP_PORT));
 
 describe.skipIf(!mailpitUp)('SmtpMailer contra Mailpit', () => {
   it('entrega el correo con asunto y cuerpo', async () => {
     const to = `test-${Date.now()}@example.com`;
-    const mailer = new SmtpMailer({ from: 'Taskillo <no-reply@devkomp.es>', host: 'localhost', port: 1025, secure: false });
+    const mailer = new SmtpMailer({ from: 'Taskillo <no-reply@devkomp.es>', host: MAILPIT_HOST, port: MAILPIT_SMTP_PORT, secure: false });
     const { subject, text, html } = registrationCodeEmail('ABCDEFGH');
     await mailer.send({ to, subject, text, html });
 
