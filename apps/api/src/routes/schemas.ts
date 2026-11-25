@@ -34,6 +34,8 @@ export const DeviceSchema = z
 
 export const AuthResponseSchema = z.object({ user: UserSchema, tokens: TokensSchema }).openapi('AuthResponse');
 
+export const RefreshResponseSchema = z.object({ tokens: TokensSchema }).openapi('RefreshResponse');
+
 /** Correo recortado y en minúsculas (data-model.md, "Reglas de validación"). */
 export const EmailSchema = z.string().trim().toLowerCase().max(254).email();
 
