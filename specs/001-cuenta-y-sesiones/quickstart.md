@@ -3,14 +3,28 @@
 Escenario de validación de extremo a extremo, en local (Git Bash en la raíz del repositorio).
 Los comandos exactos se fijan en la tarea T001/T003 y se copian a `CLAUDE.md`.
 
+**Todo en local mientras Rafa no prepare el VPS, el subdominio y el buzón SMTP.** Nada de
+esta guía necesita IONOS: el correo se captura en Mailpit y la base de datos es local o una
+rama de desarrollo de Neon.
+
 1. `cp .env.example .env` y ajustar solo si hace falta (los valores de ejemplo funcionan en local).
-2. `docker compose up -d postgres mailpit` y `pnpm install`.
+   - Base de datos, una de estas dos opciones:
+     - **PostgreSQL 16 local**: con Docker (`docker compose up -d postgres`) o instalado en el PC.
+     - **Rama de desarrollo de Neon**: `DATABASE_URL` con su cadena y `sslmode=require`.
+       Nunca la rama de producción.
+   - `TEST_DATABASE_URL` apunta a **otra** base de datos (los tests la vacían en cada ejecución).
+   - Correo: `MAIL_DRIVER=smtp` hacia Mailpit (`SMTP_HOST=localhost`, `SMTP_PORT=1025`, sin
+     TLS ni credenciales), con Docker (`docker compose up -d mailpit`) o con el ejecutable de
+     Mailpit para Windows.
+2. `pnpm install`.
 3. `pnpm --filter api db:migrate` y `pnpm --filter api dev` (API en `http://localhost:3000`).
 4. `pnpm test` (API) y `cd apps/app && flutter test`.
 5. `cd apps/app && flutter run -d windows` (y, con un móvil o emulador, `-d android`;
    en el emulador la API es `http://10.0.2.2:3000`).
-6. Registrar una cuenta en la app. Abrir Mailpit (`http://localhost:8025`), pulsar el
-   enlace de verificación y comprobar que el perfil pasa a "verificado".
+6. Registrar una cuenta en la app en dos pasos: escribir el correo, copiar el código del
+   correo que llega a Mailpit (`http://localhost:8025`) y completar nombre de usuario,
+   nombre visible y contraseña; la app entra directamente. Repetir el paso 1 con el mismo
+   correo: la app muestra el mismo mensaje y en Mailpit llega el aviso "ya tienes cuenta".
 7. Cerrar la app y reabrirla (también con la red cortada): sigue dentro.
 8. Iniciar sesión con la misma cuenta en Android. En Perfil, ver los dos dispositivos.
 9. "Cerrar sesión en todos" desde el PC: el móvil vuelve a login en su siguiente renovación.

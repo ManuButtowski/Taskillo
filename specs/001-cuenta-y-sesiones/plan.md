@@ -7,8 +7,8 @@
 ## Summary
 
 Se monta el monorepo (API Hono + Drizzle, app Flutter, contrato OpenAPI, Docker Compose, CI y
-despliegue al VPS) y sobre él se implementa la cuenta: registro, login, verificación de
-correo, recuperación de contraseña, perfil, sesiones por dispositivo y rotación de refresh
+despliegue al VPS) y sobre él se implementa la cuenta: registro en dos pasos (correo → código + datos, con el
+correo verificado al crear la cuenta; decisión de Manuel), login, recuperación de contraseña, perfil, sesiones por dispositivo y rotación de refresh
 tokens con detección de reutilización. El contrato se genera desde Zod; los modelos Dart se
 generan desde el contrato. La lógica crítica (contraseñas, tokens, rotación) se escribe con
 tests primero (principio VII).
@@ -17,11 +17,11 @@ tests primero (principio VII).
 
 **Language/Version**: TypeScript 5.x sobre Node.js 22 LTS (API); Dart 3 / Flutter estable (app)
 
-**Primary Dependencies**: API: Hono, `@hono/zod-openapi`, Zod, Drizzle ORM + drizzle-kit, `postgres` (driver), `@node-rs/argon2`, `jose` (JWT), `nodemailer`. App: `dio`, `flutter_riverpod`, `go_router`, `flutter_secure_storage`, `shared_preferences`, `url_launcher`, `swagger_parser` (generación de modelos), `uuid`. Gestor: pnpm workspaces. Resend se llama por `fetch`, sin SDK.
+**Primary Dependencies**: API: Hono, `@hono/zod-openapi`, Zod, Drizzle ORM + drizzle-kit, `postgres` (driver), `@node-rs/argon2`, `jose` (JWT), `nodemailer`, `uuid` (UUIDv7; PostgreSQL 16 no los genera). App: `dio`, `flutter_riverpod`, `go_router`, `flutter_secure_storage`, `shared_preferences`, `url_launcher`, `swagger_parser` (generación de modelos), `uuid`. Gestor: pnpm workspaces. Resend se llama por `fetch`, sin SDK.
 
-**Storage**: PostgreSQL 16 (Docker local, Neon en producción). La app no usa `drift` todavía (llega en la spec 002); en esta spec solo guarda tokens en almacenamiento seguro y el perfil en `shared_preferences`.
+**Storage**: PostgreSQL 16 (Docker local, Neon en producción). **Mientras Rafa no prepare el VPS, el subdominio y el buzón SMTP, todo se desarrolla y prueba en local**: PostgreSQL local (Docker Compose o instalado en el PC) o una rama de desarrollo de Neon (gratuita), y el correo en Mailpit. Ningún flujo de esta spec necesita el VPS ni el SMTP de IONOS para cerrarse salvo el despliegue real (T030), que queda pendiente de Rafa. La app no usa `drift` todavía (llega en la spec 002); en esta spec solo guarda tokens en almacenamiento seguro y el perfil en `shared_preferences`.
 
-**Testing**: API: Vitest contra un PostgreSQL real (Compose local, service container en CI) y un `FakeMailer`. App: `flutter test` (unitarios y de widget).
+**Testing**: API: Vitest contra un PostgreSQL real (local o rama de Neon de desarrollo, service container en CI), siempre por `TEST_DATABASE_URL` y nunca contra la base de producción, y un `FakeMailer`. App: `flutter test` (unitarios y de widget).
 
 **Target Platform**: API en Linux (Docker, VPS IONOS); app en Windows 10/11 y Android.
 
@@ -31,7 +31,7 @@ tests primero (principio VII).
 
 **Constraints**: coste 0 €; un solo VPS con una sola instancia de la API; ningún secreto en el repo; sin servidores de terceros de pago.
 
-**Scale/Scope**: usuarios en decenas; 4 tablas; unos 14 endpoints; 6 pantallas.
+**Scale/Scope**: usuarios en decenas; 4 tablas; unos 15 endpoints; 7 pantallas (el registro pasa a dos).
 
 ## Constitution Check
 
@@ -39,8 +39,8 @@ tests primero (principio VII).
 
 | Principio | Veredicto | Notas |
 | :--- | :--- | :--- |
-| I. Fricción cero | Pasa | Registro con 4 campos; sesión persistente; la app abre sin esperar al servidor. |
-| II. Privacidad soberana | Pasa | Respuestas genéricas (no revelan si existe el correo), `404`/`401` sin detalle, `user_id` siempre del token. Sin datos sociales todavía. |
+| I. Fricción cero | Pasa | Registro en dos pasos (correo; después código de 8 caracteres + 3 campos) a cambio de cero fuga de existencia del correo; sesión persistente; la app abre sin esperar al servidor. |
+| II. Privacidad soberana | Pasa | Registro y recuperación responden igual exista o no el correo (registro en dos pasos), el nombre de usuario ocupado solo se revela tras probar la posesión del correo, `404`/`401` sin detalle, `user_id` siempre del token. Sin datos sociales todavía. |
 | III. Local-first | Pasa (parcial justificado) | Con sesión guardada la app abre sin red y pospone la renovación. Registro y login exigen red por naturaleza. La cola de escritura y `drift` llegan con la spec 002. |
 | IV. Coste 0 € | Pasa | Nodemailer, jose, Argon2, Caddy, GHCR, Actions: todo gratuito. Sin dependencias de pago. |
 | V. Portabilidad | Pasa | Solo `citext`; config por variables de entorno; correo tras interfaz con SMTP/Resend; mismo contenedor en Compose local y VPS. |
