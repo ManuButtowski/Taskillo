@@ -15,7 +15,7 @@ tests primero (principio VII).
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x sobre Node.js 22 LTS (API); Dart 3 / Flutter estable (app)
+**Language/Version**: TypeScript 5.x sobre Node.js 24 LTS (API); Dart 3 / Flutter estable (app)
 
 **Primary Dependencies**: API: Hono, `@hono/zod-openapi`, Zod, Drizzle ORM + drizzle-kit, `postgres` (driver), `@node-rs/argon2`, `jose` (JWT), `nodemailer`, `uuid` (UUIDv7; PostgreSQL 16 no los genera). App: `dio`, `flutter_riverpod`, `go_router`, `flutter_secure_storage`, `shared_preferences`, `url_launcher`, `swagger_parser` (generación de modelos), `uuid`. Gestor: pnpm workspaces. Resend se llama por `fetch`, sin SDK.
 

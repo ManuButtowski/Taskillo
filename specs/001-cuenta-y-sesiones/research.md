@@ -4,7 +4,7 @@ Cada punto: decisión, motivo y alternativa descartada.
 
 ## API
 
-- **Gestor y Node.** pnpm workspaces y Node 22 LTS. Alternativa: npm workspaces; pnpm es más rápido y estricto con dependencias.
+- **Gestor y Node.** pnpm workspaces y Node 24 LTS (la instalada en el PC; se fija igual en `engines`, el Dockerfile y la CI). Alternativa: npm workspaces; pnpm es más rápido y estricto con dependencias.
 - **Argon2id.** `@node-rs/argon2` (binarios precompilados, sin `node-gyp` en Windows ni en Docker alpine/slim). Parámetros OWASP: memoria 19456 KiB, 2 iteraciones, 1 hilo.
 - **Política de contraseña.** Mínimo 10 caracteres, máximo 128; se rechazan las de una lista de unas 1000 contraseñas comunes incluida en el repo (`common-passwords.ts`) y las iguales al correo o al nombre de usuario. Sin reglas de composición (mayúsculas, símbolos), siguiendo NIST 800-63B.
 - **JWT.** `jose`, HS256 con `JWT_SECRET` (mínimo 32 bytes), `exp` 15 min, claims `sub` (user id) y `fam` (family id). Un solo servicio firma y verifica, así que no hace falta asimétrico. El token de acceso no se consulta en BD, de modo que tras revocar una sesión sigue valiendo hasta 15 min; es lo aceptado en la especificación (§4.5) y SC-002 habla de refresh tokens.

@@ -51,7 +51,7 @@ Cada módulo indica la fase en la que entra.
 
 ### M01. Cuenta y perfil — Fase 1 (Google y foto en Fase 2)
 
-- **Registro e inicio de sesión con correo y contraseña.** Contraseña con hash `Argon2id`. Verificación de correo y recuperación de contraseña por enlace.
+- **Registro e inicio de sesión con correo y contraseña.** Contraseña con hash `Argon2id`. Registro en dos pasos: primero solo el correo (la respuesta es siempre la misma, exista o no la cuenta) y después un código de un solo uso enviado por correo con el que se completa el alta, que deja el correo verificado. Recuperación de contraseña por enlace.
   - ✅ **DECIDIDO (2026-11-25) — correo por el SMTP de IONOS** (`smtp.ionos.es:587`, STARTTLS) desde un buzón dedicado `no-reply@devkomp.es`, incluido en el alojamiento de DEVKOMP (0 €). El backend envía a través de una interfaz propia de envío con dos implementaciones: SMTP (la de uso) y **Resend** (alternativa, por si el SMTP da problemas de entrega o de límites). Se cambia con una variable de entorno, sin tocar el código. En desarrollo los correos se capturan en local con Mailpit (Docker Compose), sin enviar nada fuera.
 - **Login con Google (Fase 2).** OpenID Connect validado en el backend. Si el correo ya existe y está verificado, se vincula a la misma cuenta.
 - **Perfil:** cambiar nombre visible, foto (Fase 2) y contraseña (solo cuentas con contraseña). Cerrar sesión en un dispositivo o en todos.

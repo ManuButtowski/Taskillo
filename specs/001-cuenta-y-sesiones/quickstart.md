@@ -8,14 +8,12 @@ esta guía necesita IONOS: el correo se captura en Mailpit y la base de datos es
 rama de desarrollo de Neon.
 
 1. `cp .env.example .env` y ajustar solo si hace falta (los valores de ejemplo funcionan en local).
-   - Base de datos, una de estas dos opciones:
-     - **PostgreSQL 16 local**: con Docker (`docker compose up -d postgres`) o instalado en el PC.
-     - **Rama de desarrollo de Neon**: `DATABASE_URL` con su cadena y `sslmode=require`.
-       Nunca la rama de producción.
+   - Base de datos: **PostgreSQL 16 en Docker** (`docker compose up -d postgres`), la vía
+     elegida. Alternativa si Docker no está disponible: una rama de desarrollo de Neon
+     (`DATABASE_URL` con su cadena y `sslmode=require`), nunca la de producción.
    - `TEST_DATABASE_URL` apunta a **otra** base de datos (los tests la vacían en cada ejecución).
    - Correo: `MAIL_DRIVER=smtp` hacia Mailpit (`SMTP_HOST=localhost`, `SMTP_PORT=1025`, sin
-     TLS ni credenciales), con Docker (`docker compose up -d mailpit`) o con el ejecutable de
-     Mailpit para Windows.
+     TLS ni credenciales), con Docker (`docker compose up -d mailpit`).
 2. `pnpm install`.
 3. `pnpm --filter api db:migrate` y `pnpm --filter api dev` (API en `http://localhost:3000`).
 4. `pnpm test` (API) y `cd apps/app && flutter test`.
