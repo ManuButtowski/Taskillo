@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { describe, expect, it } from 'vitest';
-import { clientIp, rateLimit, SlidingWindowLimiter } from '../../src/lib/rate-limit.js';
+import { describe, expect, it, vi } from 'vitest';
+import { clientIp, MAX_WINDOW_MS, rateLimit, schedulePrune, SlidingWindowLimiter } from '../../src/lib/rate-limit.js';
 
 const limit = { max: 3, windowMs: 60_000 };
 
@@ -80,5 +80,29 @@ describe('rateLimit (middleware)', () => {
     app.use('*', rateLimit(limiter, [{ name: 'e', limit: { max: 1, windowMs: 1000 }, key: () => null }]));
     app.get('/', (c) => c.text('ok'));
     for (let i = 0; i < 3; i++) expect((await app.request('/')).status).toBe(200);
+  });
+});
+
+describe('schedulePrune', () => {
+  it('purga el limitador cada intervalo y su timer no impide cerrar el proceso', () => {
+    vi.useFakeTimers();
+    try {
+      const l = new SlidingWindowLimiter();
+      const prune = vi.spyOn(l, 'prune');
+      const timer = schedulePrune(l, { intervalMs: 1000, maxWindowMs: 5000 });
+      expect(timer.hasRef()).toBe(false);
+      vi.advanceTimersByTime(3500);
+      expect(prune).toHaveBeenCalledTimes(3);
+      expect(prune).toHaveBeenCalledWith(5000);
+      clearInterval(timer);
+      vi.advanceTimersByTime(5000);
+      expect(prune).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('por defecto usa la ventana mayor de la política (1 h)', () => {
+    expect(MAX_WINDOW_MS).toBe(60 * 60_000);
   });
 });

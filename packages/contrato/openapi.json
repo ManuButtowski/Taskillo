@@ -6,6 +6,13 @@
     "description": "API de Taskillo."
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {
       "Health": {
         "type": "object",
@@ -19,6 +26,46 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "Empty": {
+        "type": "object",
+        "properties": {}
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          }
+        },
+        "required": [
+          "email"
         ]
       }
     },
@@ -38,6 +85,56 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Paso 1 del registro: envía un código al correo",
+        "description": "Responde siempre igual, tenga o no cuenta el correo: si no la tiene, envía el código de registro; si la tiene, envía un aviso de \"ya tienes cuenta\".",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Petición aceptada (idéntica exista o no la cuenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Correo mal formado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiados intentos (cabecera Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }

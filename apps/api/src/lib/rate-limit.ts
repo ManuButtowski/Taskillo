@@ -88,3 +88,32 @@ export function rateLimit(limiter: SlidingWindowLimiter, rules: RateLimitRule[])
     await next();
   };
 }
+
+/** Correo del cuerpo JSON (recortado y en minúsculas) para limitar por correo; `null` si no hay. */
+export async function emailFromBody(c: Context): Promise<string | null> {
+  try {
+    const body = (await c.req.json()) as { email?: unknown };
+    return typeof body?.email === 'string' && body.email.trim() ? body.email.trim().toLowerCase().slice(0, 254) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Ventana mayor de la política: tras ella un intento ya no cuenta para ninguna regla. */
+export const MAX_WINDOW_MS = Math.max(...Object.values(LIMITS).map((l) => l.windowMs));
+
+/**
+ * Programa la purga periódica del limitador (sin ella el mapa crece con cada IP/correo distinto).
+ * El timer no impide cerrar el proceso (`unref`); el que llama puede pararlo con `clearInterval`.
+ */
+export function schedulePrune(
+  limiter: SlidingWindowLimiter,
+  options: { intervalMs?: number; maxWindowMs?: number } = {},
+): NodeJS.Timeout {
+  const timer = setInterval(
+    () => limiter.prune(options.maxWindowMs ?? MAX_WINDOW_MS),
+    options.intervalMs ?? 10 * MINUTE,
+  );
+  timer.unref();
+  return timer;
+}
