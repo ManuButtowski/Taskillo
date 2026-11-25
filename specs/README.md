@@ -10,7 +10,7 @@ Se implementan **en este orden**, porque cada una se apoya en la anterior.
 
 | Spec | Módulos | Estado | Depende de |
 | :--- | :--- | :--- | :--- |
-| [001-cuenta-y-sesiones](001-cuenta-y-sesiones/spec.md) | M01 (correo y contraseña) + base del monorepo | spec escrita | — |
+| [001-cuenta-y-sesiones](001-cuenta-y-sesiones/spec.md) | M01 (correo y contraseña) + base del monorepo | planificada (plan y tareas listos) | — |
 | [002-grupos-y-sincronizacion](002-grupos-y-sincronizacion/spec.md) | M02 + M05 | spec escrita | 001 |
 | [003-tareas-recurrencias-alarmas](003-tareas-recurrencias-alarmas/spec.md) | M03 | spec escrita | 002 |
 | [004-lista-calendario-cuadrante](004-lista-calendario-cuadrante/spec.md) | M04 | spec escrita | 003 |

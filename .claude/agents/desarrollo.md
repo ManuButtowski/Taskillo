@@ -24,7 +24,7 @@ comentarios y los commits; los identificadores del código van en inglés.
 - **Ejecuta solo los tests afectados** por tu cambio, no la batería entera.
 - Al terminar la tarea, márcala con `[x]` en `tasks.md` y haz un commit pequeño con un
   mensaje en español que empiece por el ID de la tarea (por ejemplo,
-  `T012: motor de ocurrencias mensuales`).
+  `T012: motor de ocurrencias mensuales`). Sin líneas `Co-Authored-By` ni de atribución.
 - Si un bloque de tareas queda terminado, dilo para que Manuel llame a QA.
 
 ## Reglas del stack

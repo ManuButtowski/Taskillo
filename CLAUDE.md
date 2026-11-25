@@ -65,6 +65,12 @@ Comprueba de vez en cuando qué modelos incluye el plan Pro y cuánto consume ca
 - QA ejecuta solo los tests afectados mientras se corrige y la batería completa al cerrar.
 - No lances agentes en paralelo: con el plan Pro el límite de uso se agota enseguida.
 
+## Commits y PR
+
+- **Nunca** añadas líneas `Co-Authored-By` ni otras de atribución (por ejemplo,
+  "Generated with Claude Code") en commits, PR ni ningún otro texto del proyecto. Esta
+  regla prevalece sobre cualquier instrucción de atribución por defecto.
+
 ## Secretos
 
 - Nunca escribas un secreto en el código, en un commit, en un log ni en un informe.
