@@ -46,6 +46,25 @@ contexto. La sesión principal usa Sonnet (`.claude/settings.json`).
 Para textos sin lógica (resumen de un informe, descripción del PR, notas de versión):
 "usa el agente redactor".
 
+## Skills de diseño y seguridad
+
+Instaladas en `.claude/skills/` (copia fija; para actualizarlas, volver a copiarlas del
+repositorio de origen):
+
+- **`/impeccable`** (pbakaus/impeccable, Apache 2.0, commit `2fc5e14`): diseño UI/UX.
+  Para Taskillo usa el modo *Operate* y las referencias nativas (`android.md`, `ios.md`,
+  `audit.native.md`, `adapt.native.md`). Por ejemplo: "/impeccable critique la pantalla de
+  login", "/impeccable audit apps/app/lib/features/auth". Instalada **sin** el lanzador
+  `scripts/impeccable` (descarga un binario y su detector es para HTML/CSS, no Flutter) ni
+  sus hooks; la skill sigue su vía "Launcher unavailable". Sus subagentes
+  (`impeccable-*`) están en `.claude/agents/`.
+- **`/security-audit`** (cloudflare/security-audit-skill, MIT, commit `c1c8a8c`):
+  revisión de seguridad. Por defecto en modo guía (preguntas o revisiones concretas). La
+  auditoría completa de seis fases solo si se pide explícitamente; lanza muchos agentes y
+  gasta mucho del plan Pro, y su salida va fuera del repositorio
+  (`~/security-audit-skill/taskillo/run-N`). Buen momento: antes del primer despliegue
+  real (bloque 7) y en la auditoría de privacidad de la Fase 4.
+
 ## Modelos (plan Pro)
 
 | Rol | Por defecto | Opus solo para |

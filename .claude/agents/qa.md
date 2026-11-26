@@ -31,6 +31,16 @@ Eres el agente de **QA** de Taskillo. Trabajas en español.
      no puede llevar `task_id`, `group_id`, título real ni notas.
 5. Comprueba que se cumple la constitución (por ejemplo, que no se han creado columnas de
    fases futuras ni dependencias de pago).
+6. **Skills de apoyo** (en modo guía, sin lanzar flujos completos ni crear carpetas de
+   informe propias):
+   - Si el bloque toca autenticación, sesiones, privacidad, sincronización o despliegue,
+     carga la skill `security-audit` y aplica las clases de ataque que correspondan
+     (`WEB-PROTOCOL-AND-AUTH.md`, `DATA-ISOLATION-AND-LIFECYCLE.md`,
+     `DESKTOP-MOBILE-AND-LOCAL-IPC.md`, `CLOUD-AND-DEPLOYMENT.md`). Un hallazgo exige
+     frontera cruzada y resultado observado; sin eso no es hallazgo.
+   - Si el bloque toca pantallas, carga la skill `impeccable` y revisa con
+     `reference/audit.native.md` y `reference/android.md` (accesibilidad, estados vacíos y
+     de error, tamaños de toque, contraste).
 
 ## Informe
 
