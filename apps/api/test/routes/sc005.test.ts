@@ -1,14 +1,14 @@
 // T016 · SC-005: ninguna respuesta ni línea de log contiene contraseñas, hashes, códigos de registro
 // ni tokens (salvo los `Tokens` recién emitidos en la respuesta que los emite), y la limitación de
 // frecuencia actúa en login y en los dos pasos del registro.
-// La recuperación de contraseña se añade a este fichero en T017 (hay un `todo` como recordatorio).
+// T017 añade la recuperación de contraseña: limitación de frecuencia y token ausente de respuestas y logs.
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../../src/db/client.js';
-import { freshIp, loginBody, PASSWORD } from '../support/accounts.js';
+import { freshIp, loginBody, PASSWORD, registerAccount } from '../support/accounts.js';
 import { buildTestApp } from '../support/app.js';
 import { setupTestDb, truncateAll } from '../support/db.js';
-import { bearer, codeFrom, del, getJson, postJson } from '../support/http.js';
+import { bearer, codeFrom, del, getJson, postForm, postJson, resetTokenFrom } from '../support/http.js';
 
 let db: Database;
 let sql: Database['client'];
@@ -192,5 +192,60 @@ describe('SC-005: la limitación de frecuencia actúa', () => {
     expect(res.headers.get('retry-after')).not.toBeNull();
   });
 
-  it.todo('recuperación de contraseña: por correo (3) y por IP (10), y sin filtrar el token (se completa en T017)');
+  it('recuperación de contraseña: por correo (3) y por IP (10)', async () => {
+    const t = buildTestApp({ db });
+    for (let i = 0; i < 3; i++) expect((await postJson(t.app, '/auth/forgot-password', { email: 'a@example.com' }, freshIp())).status).toBe(202);
+    const blocked = await postJson(t.app, '/auth/forgot-password', { email: 'a@example.com' }, freshIp());
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get('retry-after')).not.toBeNull();
+
+    const headers = { 'x-forwarded-for': '10.6.6.6' };
+    for (let i = 0; i < 10; i++) expect((await postJson(t.app, '/auth/forgot-password', { email: `c${i}@example.com` }, headers)).status).toBe(202);
+    expect((await postJson(t.app, '/auth/forgot-password', { email: 'c99@example.com' }, headers)).status).toBe(429);
+  });
 });
+
+describe('SC-005: la recuperación de contraseña no filtra el token', () => {
+  it('el token solo está en el correo y en la URL de la petición: ni en respuestas de otras rutas ni en logs', async () => {
+    const t = buildTestApp({ db });
+    const account = await registerAccountForReset(t);
+    await postJson(t.app, '/auth/forgot-password', { email: account.email }, freshIp());
+    await new Promise((r) => setTimeout(r, 20));
+    const token = resetTokenFrom(t.mailer.last());
+    const hashes = (await sql<{ v: string }[]>`SELECT token_hash AS v FROM email_tokens WHERE type = 'reset_password'`).map((r) => r.v);
+
+    const responses: { label: string; text: string }[] = [];
+    const record = async (label: string, res: Response) => {
+      const headers = [...res.headers.entries()].map(([k, v]) => `${k}: ${v}`).join('\n');
+      responses.push({ label, text: `${headers}\n${await res.text()}` });
+    };
+    await record('forgot-existente', await postJson(t.app, '/auth/forgot-password', { email: account.email }, freshIp()));
+    await record('forgot-inexistente', await postJson(t.app, '/auth/forgot-password', { email: 'nadie@example.com' }, freshIp()));
+    await record('reset-debil', await postJson(t.app, '/auth/reset-password', { token: 'basura', newPassword: SECOND_PASSWORD }));
+    await record('reset-form-mal', await postForm(t.app, '/auth/reset-password', { token: 'basura', newPassword: 'corta' }));
+    await record('get-basura', await getJson(t.app, '/auth/reset-password?token=basura'));
+    // El enlace del correo anterior quedó invalidado por el segundo forgot-password; el último es el vigente.
+    const current = resetTokenFrom(t.mailer.last());
+    await record('reset-ok', await postJson(t.app, '/auth/reset-password', { token: current, newPassword: SECOND_PASSWORD }));
+    await record('reset-reuso', await postJson(t.app, '/auth/reset-password', { token: current, newPassword: SECOND_PASSWORD }));
+    await record('reset-form-reuso', await postForm(t.app, '/auth/reset-password', { token: current, newPassword: SECOND_PASSWORD }));
+
+    for (const r of responses) {
+      for (const secret of [token, current, SECOND_PASSWORD, ...hashes]) expect(r.text, r.label).not.toContain(secret);
+    }
+    const logs = t.logs.join('\n');
+    for (const secret of [token, current, SECOND_PASSWORD, PASSWORD, ...hashes]) expect(logs, 'log').not.toContain(secret);
+    // Las rutas con ?token= se registran sin la consulta.
+    expect(logs).not.toContain('token=');
+  });
+
+  it('GET con token en la URL no deja el token en el log aunque la ruta falle', async () => {
+    const t = buildTestApp({ db });
+    await getJson(t.app, '/auth/reset-password?token=TOKEN-SECRETO-DE-PRUEBA');
+    expect(t.logs.join('\n')).not.toContain('TOKEN-SECRETO-DE-PRUEBA');
+  });
+});
+
+async function registerAccountForReset(t: ReturnType<typeof buildTestApp>) {
+  return registerAccount(t, 'recupera@example.com');
+}

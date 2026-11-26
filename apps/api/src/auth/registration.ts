@@ -49,7 +49,7 @@ export function canonicalTimezone(value: string): string | null {
   }
 }
 
-const PASSWORD_MESSAGES = {
+export const PASSWORD_MESSAGES = {
   too_short: 'La contraseña debe tener al menos 10 caracteres.',
   too_long: 'La contraseña no puede superar los 128 caracteres.',
   common: 'Esa contraseña es demasiado común. Elige otra.',
