@@ -6,7 +6,7 @@ import { SlidingWindowLimiter } from './lib/rate-limit.js';
 import type { Mailer } from './mail/mailer.js';
 import { authRoutes } from './routes/auth.js';
 import { health } from './routes/health.js';
-import { meRoutes } from './routes/me.js';
+import { sessionRoutes } from './routes/sessions.js';
 
 export interface AppDeps {
   logger: Logger;
@@ -62,7 +62,7 @@ export function createApp(deps: AppDeps) {
   app.use(requestLogger(deps.logger));
   app.route('/', health);
   app.route('/api/v1', authRoutes(ctx));
-  app.route('/api/v1', meRoutes(ctx));
+  app.route('/api/v1', sessionRoutes(ctx));
   app.onError((err, c) => {
     deps.logger.error('unhandled_error', { err });
     return c.json(errorBody('internal_error', 'Error interno del servidor.'), 500);

@@ -245,6 +245,59 @@
         "required": [
           "refreshToken"
         ]
+      },
+      "SessionList": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Session"
+            }
+          }
+        },
+        "required": [
+          "sessions"
+        ]
+      },
+      "Session": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "windows",
+              "linux",
+              "macos"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "current": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deviceId",
+          "platform",
+          "lastSeenAt",
+          "createdAt",
+          "current"
+        ]
       }
     },
     "parameters": {}
@@ -498,6 +551,159 @@
           },
           "422": {
             "description": "Datos no válidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Sesiones"
+        ],
+        "summary": "Cierra la sesión del dispositivo actual",
+        "description": "Borra el dispositivo de la sesión actual y, en cascada, sus sesiones. Idempotente.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Hecho"
+          },
+          "401": {
+            "description": "Token de acceso ausente o no válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "tags": [
+          "Sesiones"
+        ],
+        "summary": "Cierra la sesión en todos los dispositivos",
+        "description": "Revoca todas las sesiones del usuario: ningún refresh token anterior vuelve a valer.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Hecho"
+          },
+          "401": {
+            "description": "Token de acceso ausente o no válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/sessions": {
+      "get": {
+        "tags": [
+          "Sesiones"
+        ],
+        "summary": "Lista los dispositivos con sesión activa",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Un elemento por dispositivo activo, identificado por su deviceId estable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token de acceso ausente o no válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/sessions/{deviceId}": {
+      "delete": {
+        "tags": [
+          "Sesiones"
+        ],
+        "summary": "Cierra la sesión de un dispositivo",
+        "description": "Borra el dispositivo (y sus sesiones). 404 si no existe o no es del usuario.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "deviceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Hecho"
+          },
+          "401": {
+            "description": "Token de acceso ausente o no válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: el dispositivo no existe o no es del usuario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "deviceId no es un UUID",
             "content": {
               "application/json": {
                 "schema": {
