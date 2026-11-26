@@ -171,6 +171,19 @@ describe('POST /me/password · límite por usuario (T019a)', () => {
     expect((await changePassword(t, ana, 'no-es-la-actual-123', NEW_PASSWORD)).status).toBe(429);
   });
 
+  it('con 30 peticiones simultáneas erróneas pasan como mucho 5 verificaciones (403) y el resto da 429', async () => {
+    const t = buildTestApp({ db });
+    const ana = await registerAccount(t, 'ana@example.com');
+    const results = await Promise.all(
+      Array.from({ length: 30 }, () => changePassword(t, ana, 'no-es-la-actual-123', NEW_PASSWORD)),
+    );
+    const statuses = results.map((r) => r.status);
+    expect(statuses.filter((s) => s === 403).length).toBeLessThanOrEqual(5);
+    expect(statuses.filter((s) => s === 429).length).toBe(30 - statuses.filter((s) => s === 403).length);
+    const limited = results.find((r) => r.status === 429)!;
+    expect(Number(limited.headers.get('retry-after'))).toBeGreaterThan(0);
+  });
+
   it('un cambio correcto no gasta intentos', async () => {
     const t = buildTestApp({ db });
     const ana = await registerAccount(t, 'ana@example.com');

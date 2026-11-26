@@ -83,14 +83,21 @@ export function meRoutes(ctx: AppContext) {
   r.use('/me', auth);
   r.use('/me/password', auth);
   // Límite por usuario que solo cuenta los fallos de contraseña actual (research.md); va tras el Bearer.
-  const failKey = (userId: string) => `change-password-fail:${userId}`;
+  // Se reserva el intento de forma atómica ANTES de verificar (peticiones simultáneas no lo superan) y
+  // se devuelve salvo que la respuesta sea 403 invalid_credentials.
   r.use('/me/password', async (c, next) => {
-    const state = ctx.limiter.peek(failKey(c.get('userId')), LIMITS.changePasswordFailures);
-    if (!state.allowed) {
-      c.header('Retry-After', String(state.retryAfterSeconds));
+    const reservation = ctx.limiter.reserve(`change-password-fail:${c.get('userId')}`, LIMITS.changePasswordFailures);
+    if (!reservation.allowed) {
+      c.header('Retry-After', String(reservation.retryAfterSeconds));
       return jsonError(c, 429, 'rate_limited', 'Demasiados intentos. Inténtalo de nuevo más tarde.');
     }
-    await next();
+    let failed = false;
+    try {
+      await next();
+      failed = c.res.status === 403;
+    } finally {
+      if (!failed) reservation.release();
+    }
   });
 
   const columns = {
@@ -131,7 +138,6 @@ export function meRoutes(ctx: AppContext) {
       case 'ok':
         return c.body(null, 204);
       case 'invalid_credentials':
-        ctx.limiter.hit(failKey(c.get('userId')), LIMITS.changePasswordFailures);
         return c.json(errorBody('invalid_credentials', 'La contraseña actual no es correcta.'), 403);
       case 'weak_password':
         return c.json(errorBody('weak_password', result.message), 422);

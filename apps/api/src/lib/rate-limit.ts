@@ -55,6 +55,31 @@ export class SlidingWindowLimiter {
     return { allowed: false, retryAfterSeconds: Math.max(1, Math.ceil(retryMs / 1000)) };
   }
 
+  /**
+   * Comprueba y registra a la vez (síncrono, sin await entre medias): peticiones simultáneas no pueden
+   * superar el máximo. Si se permite, `release` devuelve esa reserva concreta (idempotente).
+   */
+  reserve(
+    key: string,
+    limit: Limit,
+  ): { allowed: true; release: () => void } | { allowed: false; retryAfterSeconds: number } {
+    const result = this.hit(key, limit);
+    if (!result.allowed) return result;
+    const list = this.hits.get(key)!;
+    const entry = list[list.length - 1]!;
+    let released = false;
+    return {
+      allowed: true,
+      release: () => {
+        if (released) return;
+        released = true;
+        const current = this.hits.get(key);
+        const index = current?.indexOf(entry) ?? -1;
+        if (current && index >= 0) current.splice(index, 1);
+      },
+    };
+  }
+
   /** Borra claves sin intentos vivos (llamar de vez en cuando para no crecer sin límite). */
   prune(maxWindowMs: number): void {
     const cutoff = this.now() - maxWindowMs;

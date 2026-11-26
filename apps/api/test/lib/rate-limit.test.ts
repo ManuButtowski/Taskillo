@@ -37,6 +37,35 @@ describe('SlidingWindowLimiter', () => {
   });
 });
 
+describe('SlidingWindowLimiter.reserve', () => {
+  it('comprueba y registra a la vez: la reserva N+1 se rechaza con retryAfter', () => {
+    const t = 1_000_000;
+    const l = new SlidingWindowLimiter(() => t);
+    for (let i = 0; i < 3; i++) expect(l.reserve('k', limit).allowed).toBe(true);
+    expect(l.reserve('k', limit)).toEqual({ allowed: false, retryAfterSeconds: 60 });
+  });
+
+  it('release devuelve esa reserva y libera un hueco; es idempotente', () => {
+    const l = new SlidingWindowLimiter(() => 1_000_000);
+    const reservas = [1, 2, 3].map(() => l.reserve('k', limit));
+    const first = reservas[0]!;
+    if (!first.allowed) throw new Error('debía permitir');
+    first.release();
+    first.release();
+    expect(l.reserve('k', limit).allowed).toBe(true);
+    expect(l.reserve('k', limit).allowed).toBe(false);
+  });
+
+  it('release solo quita su propia reserva, no las de otras claves', () => {
+    const l = new SlidingWindowLimiter(() => 1_000_000);
+    const a = l.reserve('a', limit);
+    for (let i = 0; i < 3; i++) l.reserve('b', limit);
+    if (!a.allowed) throw new Error('debía permitir');
+    a.release();
+    expect(l.reserve('b', limit).allowed).toBe(false);
+  });
+});
+
 describe('rateLimit (middleware)', () => {
   function build(trustProxy: boolean) {
     const limiter = new SlidingWindowLimiter();
