@@ -1,4 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { HTTPException } from 'hono/http-exception';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { Database } from './db/client.js';
 import { errorBody, validationHook } from './lib/errors.js';
 import { requestLogger, type Logger } from './lib/logger.js';
@@ -64,6 +66,16 @@ export function createApp(deps: AppDeps) {
   app.route('/api/v1', authRoutes(ctx));
   app.route('/api/v1', sessionRoutes(ctx));
   app.onError((err, c) => {
+    // Errores del propio cliente (JSON mal formado, tipo de contenido): su estado, sin log de error.
+    if (err instanceof HTTPException && err.status < 500) {
+      const status = err.status as ContentfulStatusCode;
+      const known: Record<number, [string, string]> = {
+        400: ['invalid_json', 'El cuerpo de la petición no es un JSON válido.'],
+        415: ['unsupported_media_type', 'El tipo de contenido debe ser application/json.'],
+      };
+      const [code, message] = known[status] ?? ['bad_request', 'Petición no válida.'];
+      return c.json(errorBody(code, message), status);
+    }
     deps.logger.error('unhandled_error', { err });
     return c.json(errorBody('internal_error', 'Error interno del servidor.'), 500);
   });
