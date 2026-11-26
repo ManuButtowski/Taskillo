@@ -44,7 +44,7 @@ QA revisa al acabar cada bloque. Los bloques se hacen en orden.
 
 - [x] T020 `apps/app`: `flutter create` con Windows y Android, estructura `core/`, `data/`, `features/`, dependencias del plan, lints, tema y `go_router` con rutas vacías; `flutter analyze` y un test de humo en verde.
 - [x] T021 Generación de modelos Dart con `swagger_parser` desde `packages/contrato/openapi.json` a `lib/data/generated/`; script de regeneración y nota en `CLAUDE.md`. Sin modelos escritos a mano.
-- [ ] T022 [US4] Cliente de API (`dio`) con URL base configurable por `--dart-define`, almacenamiento seguro del refresh token (`flutter_secure_storage`) y interceptor de renovación transparente con cerrojo (una sola renovación a la vez, reintento único, fallo de red no cierra sesión). Tests con adaptador de dio simulado.
+- [x] T022 [US4] Cliente de API (`dio`) con URL base configurable por `--dart-define`, almacenamiento seguro del refresh token (`flutter_secure_storage`) y interceptor de renovación transparente con cerrojo (una sola renovación a la vez, reintento único, fallo de red no cierra sesión). Tests con adaptador de dio simulado.
 - [ ] T023 [US1] Repositorio y estado de sesión (Riverpod): registro en dos pasos (pedir código; completar con código y datos, que inicia la sesión), login (genera UUIDv7 de dispositivo, plataforma, nombre y zona horaria; ante `409 device_id_conflict` genera otro y reintenta una vez), arranque con sesión guardada sin esperar al servidor, cierre de sesión que borra tokens y perfil cacheado. Tests unitarios, incluido arranque sin conexión.
 
 ## Bloque 6 — Pantallas (US1, US2, US3)
