@@ -7,10 +7,10 @@ import { changePassword } from '../auth/password-reset.js';
 import { users } from '../db/schema.js';
 import { errorBody, jsonError, validationHook } from '../lib/errors.js';
 import { LIMITS } from '../lib/rate-limit.js';
-import { errorResponse, UserSchema } from './schemas.js';
+import { errorResponse, UserSchema, rateLimitedResponse, unauthorizedResponse } from './schemas.js';
 
 const security = [{ bearerAuth: [] }];
-const unauthorized = errorResponse('Token de acceso ausente o no válido');
+const unauthorized = unauthorizedResponse();
 const UserResponseSchema = z.object({ user: UserSchema }).openapi('UserResponse');
 
 const getMeRoute = createRoute({
@@ -73,7 +73,7 @@ const passwordRoute = createRoute({
     401: unauthorized,
     403: errorResponse('invalid_credentials: la contraseña actual no coincide'),
     422: errorResponse('weak_password o validation_error'),
-    429: errorResponse('Demasiados intentos fallidos (cabecera Retry-After)'),
+    429: rateLimitedResponse('Demasiados intentos fallidos'),
   },
 });
 

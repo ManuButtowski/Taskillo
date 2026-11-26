@@ -10,7 +10,7 @@ import {
   revokeAllSessions,
 } from '../auth/sessions.js';
 import { errorBody, validationHook } from '../lib/errors.js';
-import { errorResponse } from './schemas.js';
+import { errorResponse, unauthorizedResponse } from './schemas.js';
 
 const security = [{ bearerAuth: [] }];
 const noContent = { 204: { description: 'Hecho' } } as const;
@@ -33,7 +33,7 @@ const logoutRoute = createRoute({
   summary: 'Cierra la sesión del dispositivo actual',
   description: 'Borra el dispositivo de la sesión actual y, en cascada, sus sesiones. Idempotente.',
   security,
-  responses: { ...noContent, 401: errorResponse('Token de acceso ausente o no válido') },
+  responses: { ...noContent, 401: unauthorizedResponse() },
 });
 
 const logoutAllRoute = createRoute({
@@ -43,7 +43,7 @@ const logoutAllRoute = createRoute({
   summary: 'Cierra la sesión en todos los dispositivos',
   description: 'Revoca todas las sesiones del usuario: ningún refresh token anterior vuelve a valer.',
   security,
-  responses: { ...noContent, 401: errorResponse('Token de acceso ausente o no válido') },
+  responses: { ...noContent, 401: unauthorizedResponse() },
 });
 
 const listRoute = createRoute({
@@ -57,7 +57,7 @@ const listRoute = createRoute({
       description: 'Un elemento por dispositivo activo, identificado por su deviceId estable',
       content: { 'application/json': { schema: z.object({ sessions: z.array(SessionSchema) }).openapi('SessionList') } },
     },
-    401: errorResponse('Token de acceso ausente o no válido'),
+    401: unauthorizedResponse(),
   },
 });
 
@@ -71,7 +71,7 @@ const deleteRoute = createRoute({
   request: { params: z.object({ deviceId: z.string().uuid() }) },
   responses: {
     ...noContent,
-    401: errorResponse('Token de acceso ausente o no válido'),
+    401: unauthorizedResponse(),
     404: errorResponse('not_found: el dispositivo no existe o no es del usuario'),
     422: errorResponse('deviceId no es un UUID'),
   },

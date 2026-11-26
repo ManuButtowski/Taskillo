@@ -434,6 +434,14 @@
           },
           "429": {
             "description": "Demasiados intentos (cabecera Retry-After)",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos que hay que esperar",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -504,6 +512,14 @@
           },
           "429": {
             "description": "Demasiados intentos (cabecera Retry-After)",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos que hay que esperar",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -573,6 +589,14 @@
           },
           "429": {
             "description": "Demasiados intentos (cabecera Retry-After)",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos que hay que esperar",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -673,6 +697,14 @@
           },
           "429": {
             "description": "Demasiados intentos (cabecera Retry-After)",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos que hay que esperar",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -777,6 +809,14 @@
           },
           "429": {
             "description": "Demasiados intentos (cabecera Retry-After)",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos que hay que esperar",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -812,6 +852,14 @@
           },
           "401": {
             "description": "Token de acceso ausente o no válido",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Siempre \"Bearer\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -854,6 +902,14 @@
           },
           "401": {
             "description": "Token de acceso ausente o no válido",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Siempre \"Bearer\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -902,6 +958,14 @@
           },
           "401": {
             "description": "Token de acceso ausente o no válido",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Siempre \"Bearer\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -932,6 +996,14 @@
           },
           "429": {
             "description": "Demasiados intentos fallidos (cabecera Retry-After)",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos que hay que esperar",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -961,6 +1033,14 @@
           },
           "401": {
             "description": "Token de acceso ausente o no válido",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Siempre \"Bearer\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -990,6 +1070,14 @@
           },
           "401": {
             "description": "Token de acceso ausente o no válido",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Siempre \"Bearer\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1025,6 +1113,14 @@
           },
           "401": {
             "description": "Token de acceso ausente o no válido",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Siempre \"Bearer\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1065,6 +1161,14 @@
           },
           "401": {
             "description": "Token de acceso ausente o no válido",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Siempre \"Bearer\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {

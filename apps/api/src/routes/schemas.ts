@@ -40,7 +40,20 @@ export const RefreshResponseSchema = z.object({ tokens: TokensSchema }).openapi(
 export const EmailSchema = z.string().trim().toLowerCase().max(254).email();
 
 /** Respuestas de error comunes, para no repetirlas en cada ruta. */
-export const errorResponse = (description: string) => ({
+export const errorResponse = (description: string, headers?: Record<string, { description: string; schema: { type: 'string' } }>) => ({
   description,
   content: { 'application/json': { schema: ErrorSchema } },
+  ...(headers ? { headers } : {}),
 });
+
+/** 429 rate_limited: lleva siempre Retry-After (segundos). */
+export const rateLimitedResponse = (description = 'Demasiados intentos') =>
+  errorResponse(`${description} (cabecera Retry-After)`, {
+    'Retry-After': { description: 'Segundos que hay que esperar', schema: { type: 'string' } },
+  });
+
+/** 401 unauthorized de las rutas Bearer: lleva WWW-Authenticate. */
+export const unauthorizedResponse = () =>
+  errorResponse('Token de acceso ausente o no válido', {
+    'WWW-Authenticate': { description: 'Siempre "Bearer"', schema: { type: 'string' } },
+  });

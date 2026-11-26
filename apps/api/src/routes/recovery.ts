@@ -11,7 +11,7 @@ import { startMinDuration } from '../lib/min-duration.js';
 import { clientIp, emailFromBody, LIMITS, rateLimit } from '../lib/rate-limit.js';
 import { passwordResetEmail } from '../mail/index.js';
 import { sendInBackground } from '../mail/background.js';
-import { EmailSchema, errorResponse } from './schemas.js';
+import { EmailSchema, errorResponse, rateLimitedResponse } from './schemas.js';
 import { PAGE_HEADERS, resetDonePage, resetFormPage, resetInvalidPage } from './reset-pages.js';
 
 const forgotRoute = createRoute({
@@ -31,7 +31,7 @@ const forgotRoute = createRoute({
       content: { 'application/json': { schema: z.object({}).openapi('Empty') } },
     },
     422: errorResponse('Correo mal formado'),
-    429: errorResponse('Demasiados intentos (cabecera Retry-After)'),
+    429: rateLimitedResponse(),
   },
 });
 
@@ -77,7 +77,7 @@ const resetPostRoute = createRoute({
     200: { description: 'Contraseña cambiada', content: { 'application/json': { schema: z.object({}).openapi('Empty') } } },
     400: errorResponse('invalid_token: enlace inválido, caducado o ya usado'),
     422: errorResponse('weak_password o validation_error'),
-    429: errorResponse('Demasiados intentos (cabecera Retry-After)'),
+    429: rateLimitedResponse(),
   },
 });
 

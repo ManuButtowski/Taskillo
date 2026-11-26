@@ -13,7 +13,7 @@ import { startMinDuration } from '../lib/min-duration.js';
 import { clientIp, emailFromBody, LIMITS, rateLimit } from '../lib/rate-limit.js';
 import { alreadyRegisteredEmail, registrationCodeEmail } from '../mail/index.js';
 import { sendInBackground } from '../mail/background.js';
-import { AuthResponseSchema, DeviceSchema, EmailSchema, errorResponse, RefreshResponseSchema } from './schemas.js';
+import { AuthResponseSchema, DeviceSchema, EmailSchema, errorResponse, RefreshResponseSchema, rateLimitedResponse } from './schemas.js';
 
 const registerRoute = createRoute({
   method: 'post',
@@ -32,7 +32,7 @@ const registerRoute = createRoute({
       content: { 'application/json': { schema: z.object({}).openapi('Empty') } },
     },
     422: errorResponse('Correo mal formado'),
-    429: errorResponse('Demasiados intentos (cabecera Retry-After)'),
+    429: rateLimitedResponse(),
   },
 });
 
@@ -72,7 +72,7 @@ const completeRoute = createRoute({
     400: errorResponse('invalid_code: código erróneo, caducado, usado o agotado (siempre igual)'),
     409: errorResponse('username_taken, email_taken o device_id_conflict'),
     422: errorResponse('Datos no válidos (weak_password, validation_error...)'),
-    429: errorResponse('Demasiados intentos (cabecera Retry-After)'),
+    429: rateLimitedResponse(),
   },
 });
 
@@ -97,7 +97,7 @@ const loginRoute = createRoute({
     401: errorResponse('invalid_credentials (genérico: correo inexistente o contraseña errónea)'),
     409: errorResponse('device_id_conflict: el id de dispositivo ya existe; la app genera otro y reintenta'),
     422: errorResponse('Datos no válidos'),
-    429: errorResponse('Demasiados intentos (cabecera Retry-After)'),
+    429: rateLimitedResponse(),
   },
 });
 
