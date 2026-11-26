@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 const booleanString = z.enum(['true', 'false']).transform((v) => v === 'true');
 
+// Prefijo del JWT_SECRET de .env.example: en producción no se admite ningún secreto que lo lleve.
+const JWT_SECRET_DE_EJEMPLO = /^valor-de-ejemplo/;
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -20,6 +23,10 @@ const envSchema = z
     SMTP_PASSWORD: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
     MAILPIT_URL: z.string().optional(),
+  })
+  .refine((e) => e.NODE_ENV !== 'production' || !JWT_SECRET_DE_EJEMPLO.test(e.JWT_SECRET), {
+    path: ['JWT_SECRET'],
+    message: 'es un valor de ejemplo de .env.example; genera uno real (openssl rand -base64 48)',
   })
   .refine((e) => e.MAIL_DRIVER !== 'resend' || !!e.RESEND_API_KEY, {
     path: ['RESEND_API_KEY'],

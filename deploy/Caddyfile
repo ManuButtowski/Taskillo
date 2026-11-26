@@ -1,0 +1,11 @@
+{
+	# Correo de contacto para Let's Encrypt (avisos de caducidad).
+	email {$ACME_EMAIL}
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+	# Caddy descarta el X-Forwarded-For que traiga el cliente y pone el suyo: por eso la API puede
+	# fiarse de él con TRUST_PROXY=true.
+	reverse_proxy api:3000
+}
