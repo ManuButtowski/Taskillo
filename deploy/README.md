@@ -62,7 +62,7 @@ secretos de despliegue.
 
 ## Desplegar
 
-Actions > *Deploy* > *Run workflow* (disparo manual). El workflow construye y publica
+Actions > *Deploy* > *Run workflow* (disparo manual) o subir un tag `v*`. No se ejecuta en ramas ni en PR. El workflow construye y publica
 `ghcr.io/<owner>/taskillo-api`, copia el compose y el Caddyfile, y en el VPS ejecuta `pull`,
 las migraciones (`node dist/migrate.js`) y `up -d`. El paquete de GHCR es privado por defecto:
 o se hace público, o el VPS hace `docker login ghcr.io` una vez con un token de solo lectura

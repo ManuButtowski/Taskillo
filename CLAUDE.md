@@ -140,3 +140,7 @@ CI (`.github/workflows/ci.yml`): en cada PR y push a `main` corre la API (typech
 PostgreSQL 16, build, contrato al día) y la app (modelos generados al día, analyze, test, APK
 debug). Plan B local opcional: `scripts/pre-push.sample` (copiar a `.git/hooks/pre-push`; no está
 instalado por defecto).
+
+Despliegue: `.github/workflows/deploy.yml` (manual o tag `v*`) y `deploy/README.md` (runbook y
+nombres de secretos). Validar workflows:
+`MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest` (en Git Bash).
