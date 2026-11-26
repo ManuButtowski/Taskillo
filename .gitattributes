@@ -12,3 +12,9 @@ Dockerfile text eol=lf
 *.png binary
 *.jpg binary
 *.ico binary
+# App Flutter: el código Dart y lo que regeneran flutter y swagger_parser, en LF,
+# para que regenerar no ensucie git status solo por saltos de línea.
+*.dart text eol=lf
+apps/app/windows/flutter/** text eol=lf
+apps/app/linux/flutter/** text eol=lf
+apps/app/macos/Flutter/** text eol=lf
