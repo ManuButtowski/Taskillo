@@ -2,11 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:taskillo/features/auth/auth_providers.dart';
+import 'package:taskillo/features/auth/forgot_password_screen.dart';
 import 'package:taskillo/features/auth/login_screen.dart';
 import 'package:taskillo/features/auth/register_screen.dart';
 import 'package:taskillo/features/home/home_screen.dart';
 
-const _publicas = {'/entrar', '/registro'};
+const _publicas = {'/entrar', '/registro', '/olvide'};
 
 /// Rutas de la app. La sesión decide a dónde se puede ir: sin sesión, solo las
 /// pantallas de cuenta; con sesión, nunca vuelven a verse.
@@ -32,6 +33,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/cargando', builder: (_, _) => const _Cargando()),
       GoRoute(path: '/entrar', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/registro', builder: (_, _) => const RegisterScreen()),
+      GoRoute(path: '/olvide', builder: (_, _) => const ForgotPasswordScreen()),
     ],
   );
   ref.onDispose(() {

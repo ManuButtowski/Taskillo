@@ -39,6 +39,16 @@ class AuthRepository {
 
   static final _publica = Options(extra: {extraPublica: true});
 
+  /// Pide el correo de recuperación de contraseña (la respuesta es siempre la
+  /// misma, exista o no la cuenta).
+  Future<void> requestPasswordReset(String email) => _llamar(() async {
+        await dio.post<Object?>(
+          '/auth/forgot-password',
+          data: ForgotPasswordRequest(email: email).toJson(),
+          options: _publica,
+        );
+      });
+
   /// Paso 1 del registro: pide el código por correo.
   Future<void> requestRegistrationCode(String email) => _llamar(() async {
         await dio.post<Object?>(
