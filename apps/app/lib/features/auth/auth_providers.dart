@@ -21,7 +21,10 @@ class SessionLoading extends SessionState {
 }
 
 class SessionAnonymous extends SessionState {
-  const SessionAnonymous();
+  /// [caducada]: la sesión se cerró porque ya no valía (no por voluntad del
+  /// usuario); el login lo explica.
+  const SessionAnonymous({this.caducada = false});
+  final bool caducada;
 }
 
 class SessionActive extends SessionState {
@@ -49,6 +52,16 @@ final deviceInfoProvider = Provider<DeviceInfoProvider>(
 /// Adaptador HTTP opcional (los tests inyectan uno simulado).
 final httpAdapterProvider = Provider<HttpClientAdapter?>((ref) => null);
 
+/// `true` mientras el cliente renueva la sesión en segundo plano.
+final renovandoSesionProvider =
+    NotifierProvider<_Renovando, bool>(_Renovando.new);
+
+class _Renovando extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void fijar(bool valor) => state = valor;
+}
+
 final dioProvider = Provider<Dio>(
   (ref) => crearApiClient(
     baseUrl: apiBaseUrl,
@@ -56,6 +69,7 @@ final dioProvider = Provider<Dio>(
     adapter: ref.watch(httpAdapterProvider),
     onSesionCaducada: () =>
         ref.read(sessionProvider.notifier).sesionCaducada(),
+    onRenovando: (v) => ref.read(renovandoSesionProvider.notifier).fijar(v),
   ),
 );
 
@@ -130,6 +144,6 @@ class SessionController extends Notifier<SessionState> {
   /// definitiva: los tokens ya están borrados; se limpia también el perfil.
   Future<void> sesionCaducada() async {
     await _repo.clearLocal();
-    state = const SessionAnonymous();
+    state = const SessionAnonymous(caducada: true);
   }
 }

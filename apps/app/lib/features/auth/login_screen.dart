@@ -62,6 +62,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (ref.watch(sessionProvider) case SessionAnonymous(caducada: true)) ...[
+                  const AvisoInformativo(
+                      'Tu sesión ha caducado. Inicia sesión de nuevo.'),
+                  const SizedBox(height: 16),
+                ],
                 if (error != null) ...[
                   AvisoDeError(
                     textoDeError(error),

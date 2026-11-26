@@ -16,6 +16,7 @@ Dio crearApiClient({
   required String baseUrl,
   required TokenStore tokens,
   required void Function() onSesionCaducada,
+  void Function(bool renovando)? onRenovando,
   HttpClientAdapter? adapter,
 }) {
   final opciones = BaseOptions(
@@ -36,6 +37,7 @@ Dio crearApiClient({
     dioRenovar: dioRenovar,
     tokens: tokens,
     onSesionCaducada: onSesionCaducada,
+    onRenovando: onRenovando,
   ));
   return dio;
 }
@@ -49,12 +51,14 @@ class _AuthInterceptor extends Interceptor {
     required this.dioRenovar,
     required this.tokens,
     required this.onSesionCaducada,
+    this.onRenovando,
   });
 
   final Dio dio;
   final Dio dioRenovar;
   final TokenStore tokens;
   final void Function() onSesionCaducada;
+  final void Function(bool renovando)? onRenovando;
 
   /// Cerrojo: una sola renovación a la vez; el resto de peticiones la esperan.
   Future<_Renovacion>? _renovando;
@@ -90,6 +94,7 @@ class _AuthInterceptor extends Interceptor {
 
     final resultado = await (_renovando ??= _renovar().whenComplete(() {
       _renovando = null;
+      onRenovando?.call(false);
     }));
     switch (resultado) {
       case _Renovacion.ok:
@@ -116,6 +121,7 @@ class _AuthInterceptor extends Interceptor {
   }
 
   Future<_Renovacion> _renovar() async {
+    onRenovando?.call(true);
     _ultimoFalloRed = null;
     final refresh = await tokens.refreshToken();
     if (refresh == null) {
