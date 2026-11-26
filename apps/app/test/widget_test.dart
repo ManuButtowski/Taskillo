@@ -1,11 +1,11 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taskillo/app.dart';
+
+import 'support/app_harness.dart';
 
 void main() {
-  testWidgets('La app arranca y muestra la pantalla inicial', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: TaskilloApp()));
-    await tester.pumpAndSettle();
-    expect(find.text('Taskillo'), findsOneWidget);
+  testWidgets('La app arranca y, sin sesión, pide iniciar sesión',
+      (tester) async {
+    await montarApp(tester);
+    expect(find.text('Iniciar sesión'), findsWidgets);
   });
 }
