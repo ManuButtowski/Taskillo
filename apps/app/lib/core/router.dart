@@ -6,6 +6,7 @@ import 'package:taskillo/features/auth/forgot_password_screen.dart';
 import 'package:taskillo/features/auth/login_screen.dart';
 import 'package:taskillo/features/auth/register_screen.dart';
 import 'package:taskillo/features/home/home_screen.dart';
+import 'package:taskillo/features/profile/profile_screen.dart';
 
 const _publicas = {'/entrar', '/registro', '/olvide'};
 
@@ -34,6 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/entrar', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/registro', builder: (_, _) => const RegisterScreen()),
       GoRoute(path: '/olvide', builder: (_, _) => const ForgotPasswordScreen()),
+      GoRoute(path: '/perfil', builder: (_, _) => const ProfileScreen()),
     ],
   );
   ref.onDispose(() {

@@ -91,6 +91,53 @@ class AuthRepository {
     });
   }
 
+  /// Cambia el nombre visible y actualiza la copia local del perfil.
+  Future<User> updateDisplayName(String displayName) => _llamar(() async {
+        final r = await dio.patch<Map<String, Object?>>(
+          '/me',
+          data: UpdateMeRequest(displayName: displayName).toJson(),
+        );
+        final user = UserResponse.fromJson(r.data!).user;
+        await cache.write(user);
+        return user;
+      });
+
+  /// Cambia la contraseña. El servidor cierra las demás sesiones; la de este
+  /// dispositivo sigue abierta.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) =>
+      _llamar(() async {
+        await dio.post<Object?>(
+          '/me/password',
+          data: ChangePasswordRequest(
+            currentPassword: currentPassword,
+            newPassword: newPassword,
+          ).toJson(),
+        );
+      });
+
+  /// Dispositivos con sesión abierta (el actual viene marcado por la API).
+  Future<List<Session>> listSessions() => _llamar(() async {
+        final r = await dio.get<Map<String, Object?>>('/me/sessions');
+        return SessionList.fromJson(r.data!).sessions;
+      });
+
+  /// Cierra la sesión de otro dispositivo.
+  Future<void> closeDeviceSession(String deviceId) => _llamar(() async {
+        await dio.delete<Object?>('/me/sessions/${Uri.encodeComponent(deviceId)}');
+      });
+
+  /// Cierra todas las sesiones. A diferencia de [logout], si no hay red falla:
+  /// no se puede asegurar que las demás sesiones se hayan cerrado.
+  Future<void> logoutAll() async {
+    await _llamar(() async {
+      await dio.post<Object?>('/auth/logout-all');
+    });
+    await clearLocal();
+  }
+
   /// Arranque: devuelve el usuario de la sesión guardada sin tocar la red.
   Future<User?> restore() async {
     final refresh = await tokens.refreshToken();

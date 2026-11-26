@@ -113,6 +113,19 @@ class SessionController extends Notifier<SessionState> {
     state = const SessionAnonymous();
   }
 
+  /// Cambia el nombre visible; la pantalla principal lo refleja al instante.
+  Future<void> cambiarNombre(String displayName) async {
+    final user = await _repo.updateDisplayName(displayName);
+    state = SessionActive(user);
+  }
+
+  /// Cierra la sesión en todos los dispositivos. Si no hay red, falla y la
+  /// sesión local sigue abierta.
+  Future<void> cerrarSesionEnTodos() async {
+    await _repo.logoutAll();
+    state = const SessionAnonymous();
+  }
+
   /// Llamado por el cliente de API cuando la renovación falla de forma
   /// definitiva: los tokens ya están borrados; se limpia también el perfil.
   Future<void> sesionCaducada() async {
