@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:taskillo/features/auth/auth_providers.dart';
+import 'package:taskillo/shared/widgets.dart';
 
 import '../../support/app_harness.dart';
 import '../../support/fake_adapter.dart';
@@ -236,5 +237,39 @@ void main() {
     await tocar(tester, find.byKey(const Key('cerrar-local')));
     expect(find.byKey(const Key('login-correo')), findsOneWidget);
     expect(app.storage.value, isNull);
+  });
+
+  testWidgets('cerrar un dispositivo que ya no existe (404) refresca la lista',
+      (tester) async {
+    var gone = false;
+    final app = await _perfil(tester, {
+      'GET /me/sessions': (o) async => json(
+          200,
+          _lista(gone
+              ? [_sesion('d-1', 'PC de Ana', actual: true)]
+              : _dispositivos())),
+      'DELETE /me/sessions/d-2': (o) async {
+        gone = true;
+        return json(404, errorJson('not_found'));
+      },
+    });
+    await tocar(tester, find.byKey(const Key('cerrar-d-2')));
+    expect(app.adapter.to('/me/sessions/d-2'), hasLength(1));
+    expect(app.adapter.to('/me/sessions'), hasLength(2));
+    expect(find.text('Móvil de Ana'), findsNothing);
+    expect(find.byType(AvisoDeError), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('error genérico al cerrar otro dispositivo: aviso y lista intacta',
+      (tester) async {
+    await _perfil(tester, {
+      'DELETE /me/sessions/d-2': (o) async =>
+          json(500, errorJson('internal_error')),
+    });
+    await tocar(tester, find.byKey(const Key('cerrar-d-2')));
+    expect(find.textContaining('El servidor tiene un problema'),
+        findsOneWidget);
+    expect(find.text('Móvil de Ana'), findsOneWidget);
   });
 }

@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:taskillo/shared/widgets.dart';
+
 import '../../support/app_harness.dart';
 import '../../support/fake_adapter.dart';
 
@@ -143,7 +145,13 @@ void main() {
     await _irAlPaso2(tester);
     await _rellenarPaso2(tester);
     await tocar(tester, find.byKey(const Key('reg-completar')));
-    expect(find.text('Ese nombre de usuario ya está en uso.'), findsOneWidget);
+    // Dentro del propio campo (no en el aviso general).
+    expect(
+        find.descendant(
+            of: find.byKey(const Key('reg-usuario')),
+            matching: find.text('Ese nombre de usuario ya está en uso.')),
+        findsOneWidget);
+    expect(find.byType(AvisoDeError), findsNothing);
     // El resto de datos se conserva para probar otro nombre.
     expect(find.text('abcd-efgh'), findsOneWidget);
   });
