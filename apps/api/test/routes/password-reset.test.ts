@@ -229,3 +229,19 @@ describe('POST /auth/reset-password', () => {
     expect(PASSWORD).not.toBe(NEW_PASSWORD);
   });
 });
+
+describe('POST /auth/reset-password · límite por IP (T019a)', () => {
+  it('la petición 21 desde la misma IP da 429 con Retry-After; otra IP no se ve afectada', async () => {
+    const t = buildTestApp({ db });
+    const ip = { 'x-forwarded-for': '10.9.9.9' };
+    for (let i = 0; i < 20; i++) {
+      const res = await postJson(t.app, '/auth/reset-password', { token: 'basura', newPassword: NEW_PASSWORD }, ip);
+      expect(res.status).toBe(400);
+    }
+    const blocked = await postForm(t.app, '/auth/reset-password', { token: 'basura', newPassword: NEW_PASSWORD }, ip);
+    expect(blocked.status).toBe(429);
+    expect(Number(blocked.headers.get('retry-after'))).toBeGreaterThan(0);
+    const other = await postJson(t.app, '/auth/reset-password', { token: 'basura', newPassword: NEW_PASSWORD }, { 'x-forwarded-for': '10.9.9.10' });
+    expect(other.status).toBe(400);
+  });
+});

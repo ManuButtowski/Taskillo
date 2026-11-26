@@ -774,6 +774,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Demasiados intentos (cabecera Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -912,6 +922,16 @@
           },
           "422": {
             "description": "weak_password o validation_error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiados intentos fallidos (cabecera Retry-After)",
             "content": {
               "application/json": {
                 "schema": {

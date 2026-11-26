@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { describe, expect, it, vi } from 'vitest';
-import { clientIp, MAX_WINDOW_MS, rateLimit, schedulePrune, SlidingWindowLimiter } from '../../src/lib/rate-limit.js';
+import { clientIp, LIMITS, MAX_WINDOW_MS, rateLimit, schedulePrune, SlidingWindowLimiter } from '../../src/lib/rate-limit.js';
 
 const limit = { max: 3, windowMs: 60_000 };
 
@@ -104,5 +104,23 @@ describe('schedulePrune', () => {
 
   it('por defecto usa la ventana mayor de la política (1 h)', () => {
     expect(MAX_WINDOW_MS).toBe(60 * 60_000);
+  });
+});
+
+describe('SlidingWindowLimiter.peek y límites de T019a', () => {
+  it('peek consulta sin registrar: no gasta intentos', () => {
+    const l = new SlidingWindowLimiter(() => 0);
+    for (let i = 0; i < 10; i++) expect(l.peek('k', limit)).toEqual({ allowed: true });
+    for (let i = 0; i < 3; i++) l.hit('k', limit);
+    expect(l.peek('k', limit)).toEqual({ allowed: false, retryAfterSeconds: 60 });
+  });
+
+  it('LIMITS fija 5 fallos/15 min para /me/password y 20/15 min por IP para reset-password', () => {
+    expect(LIMITS.changePasswordFailures).toEqual({ max: 5, windowMs: 15 * 60_000 });
+    expect(LIMITS.resetPasswordIp).toEqual({ max: 20, windowMs: 15 * 60_000 });
+  });
+
+  it('MAX_WINDOW_MS cubre todas las ventanas', () => {
+    for (const l of Object.values(LIMITS)) expect(MAX_WINDOW_MS).toBeGreaterThanOrEqual(l.windowMs);
   });
 });

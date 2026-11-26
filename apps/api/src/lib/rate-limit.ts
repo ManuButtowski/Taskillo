@@ -20,6 +20,9 @@ export const LIMITS = {
   registerCompleteIp: { max: 10, windowMs: 15 * MINUTE },
   forgotEmail: { max: 3, windowMs: HOUR },
   forgotIp: { max: 10, windowMs: HOUR },
+  /** Solo cuentan los fallos de contraseña actual, por user_id. */
+  changePasswordFailures: { max: 5, windowMs: 15 * MINUTE },
+  resetPasswordIp: { max: 20, windowMs: 15 * MINUTE },
 } as const satisfies Record<string, Limit>;
 
 export type Clock = () => number;
@@ -41,6 +44,15 @@ export class SlidingWindowLimiter {
     recent.push(now);
     this.hits.set(key, recent);
     return { allowed: true };
+  }
+
+  /** Consulta como `hit` pero sin registrar el intento (para límites que solo cuentan fallos). */
+  peek(key: string, limit: Limit): { allowed: true } | { allowed: false; retryAfterSeconds: number } {
+    const now = this.now();
+    const recent = (this.hits.get(key) ?? []).filter((t) => t > now - limit.windowMs);
+    if (recent.length < limit.max) return { allowed: true };
+    const retryMs = recent[0]! + limit.windowMs - now;
+    return { allowed: false, retryAfterSeconds: Math.max(1, Math.ceil(retryMs / 1000)) };
   }
 
   /** Borra claves sin intentos vivos (llamar de vez en cuando para no crecer sin límite). */

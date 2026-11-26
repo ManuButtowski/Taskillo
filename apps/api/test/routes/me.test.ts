@@ -140,3 +140,45 @@ describe('POST /me/password', () => {
     expect((await postJson(t.app, '/me/password', { currentPassword: PASSWORD }, bearer(ana.accessToken))).status).toBe(422);
   });
 });
+
+describe('POST /me/password · límite por usuario (T019a)', () => {
+  it('el 6.º intento fallido da 429 con Retry-After aunque la contraseña ya sea correcta', async () => {
+    const t = buildTestApp({ db });
+    const ana = await registerAccount(t, 'ana@example.com');
+    for (let i = 0; i < 5; i++) expect((await changePassword(t, ana, 'no-es-la-actual-123', NEW_PASSWORD)).status).toBe(403);
+    const res = await changePassword(t, ana, PASSWORD, NEW_PASSWORD);
+    expect(res.status).toBe(429);
+    expect(Number(res.headers.get('retry-after'))).toBeGreaterThan(0);
+    expect(((await res.json()) as any).error.code).toBe('rate_limited');
+    // La contraseña no se cambió.
+    expect((await postJson(t.app, '/auth/login', loginBody(ana), freshIp())).status).toBe(200);
+  });
+
+  it('el límite de un usuario no afecta a otro', async () => {
+    const t = buildTestApp({ db });
+    const ana = await registerAccount(t, 'ana@example.com');
+    const luis = await registerAccount(t, 'luis@example.com');
+    for (let i = 0; i < 6; i++) await changePassword(t, ana, 'no-es-la-actual-123', NEW_PASSWORD);
+    expect((await changePassword(t, luis, PASSWORD, NEW_PASSWORD)).status).toBe(204);
+  });
+
+  it('solo cuenta los fallos: 422 weak_password y peticiones sin token no gastan intentos', async () => {
+    const t = buildTestApp({ db });
+    const ana = await registerAccount(t, 'ana@example.com');
+    for (let i = 0; i < 8; i++) expect((await changePassword(t, ana, PASSWORD, 'corta')).status).toBe(422);
+    for (let i = 0; i < 8; i++) await postJson(t.app, '/me/password', { currentPassword: 'x', newPassword: 'y' });
+    for (let i = 0; i < 5; i++) expect((await changePassword(t, ana, 'no-es-la-actual-123', NEW_PASSWORD)).status).toBe(403);
+    expect((await changePassword(t, ana, 'no-es-la-actual-123', NEW_PASSWORD)).status).toBe(429);
+  });
+
+  it('un cambio correcto no gasta intentos', async () => {
+    const t = buildTestApp({ db });
+    const ana = await registerAccount(t, 'ana@example.com');
+    let current = PASSWORD;
+    for (let i = 0; i < 7; i++) {
+      const next = `contrasena-nueva-numero-${i}-9031`;
+      expect((await changePassword(t, ana, current, next)).status).toBe(204);
+      current = next;
+    }
+  });
+});

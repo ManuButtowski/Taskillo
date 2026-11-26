@@ -77,6 +77,7 @@ const resetPostRoute = createRoute({
     200: { description: 'Contraseña cambiada', content: { 'application/json': { schema: z.object({}).openapi('Empty') } } },
     400: errorResponse('invalid_token: enlace inválido, caducado o ya usado'),
     422: errorResponse('weak_password o validation_error'),
+    429: errorResponse('Demasiados intentos (cabecera Retry-After)'),
   },
 });
 
@@ -95,6 +96,12 @@ export function recoveryRoutes(ctx: AppContext) {
       { name: 'forgot:ip', limit: LIMITS.forgotIp, key: ip },
     ]),
   );
+
+  r.use('/auth/reset-password', async (c, next) => {
+    // Solo el POST gasta intentos; el GET de la página no.
+    if (c.req.method !== 'POST') return next();
+    return rateLimit(ctx.limiter, [{ name: 'reset:ip', limit: LIMITS.resetPasswordIp, key: ip }])(c, next);
+  });
 
   r.openapi(forgotRoute, async (c) => {
     const { email } = c.req.valid('json');

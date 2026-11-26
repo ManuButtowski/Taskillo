@@ -5,7 +5,8 @@ import type { AppContext } from '../app.js';
 import { requireAuth, type AuthVariables } from '../auth/middleware.js';
 import { changePassword } from '../auth/password-reset.js';
 import { users } from '../db/schema.js';
-import { errorBody, validationHook } from '../lib/errors.js';
+import { errorBody, jsonError, validationHook } from '../lib/errors.js';
+import { LIMITS } from '../lib/rate-limit.js';
 import { errorResponse, UserSchema } from './schemas.js';
 
 const security = [{ bearerAuth: [] }];
@@ -72,6 +73,7 @@ const passwordRoute = createRoute({
     401: unauthorized,
     403: errorResponse('invalid_credentials: la contraseña actual no coincide'),
     422: errorResponse('weak_password o validation_error'),
+    429: errorResponse('Demasiados intentos fallidos (cabecera Retry-After)'),
   },
 });
 
@@ -80,6 +82,16 @@ export function meRoutes(ctx: AppContext) {
   const auth = requireAuth(ctx.jwtSecret);
   r.use('/me', auth);
   r.use('/me/password', auth);
+  // Límite por usuario que solo cuenta los fallos de contraseña actual (research.md); va tras el Bearer.
+  const failKey = (userId: string) => `change-password-fail:${userId}`;
+  r.use('/me/password', async (c, next) => {
+    const state = ctx.limiter.peek(failKey(c.get('userId')), LIMITS.changePasswordFailures);
+    if (!state.allowed) {
+      c.header('Retry-After', String(state.retryAfterSeconds));
+      return jsonError(c, 429, 'rate_limited', 'Demasiados intentos. Inténtalo de nuevo más tarde.');
+    }
+    await next();
+  });
 
   const columns = {
     id: users.id,
@@ -119,6 +131,7 @@ export function meRoutes(ctx: AppContext) {
       case 'ok':
         return c.body(null, 204);
       case 'invalid_credentials':
+        ctx.limiter.hit(failKey(c.get('userId')), LIMITS.changePasswordFailures);
         return c.json(errorBody('invalid_credentials', 'La contraseña actual no es correcta.'), 403);
       case 'weak_password':
         return c.json(errorBody('weak_password', result.message), 422);
