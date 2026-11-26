@@ -9,6 +9,7 @@ import { SlidingWindowLimiter } from './lib/rate-limit.js';
 import type { Mailer } from './mail/mailer.js';
 import { authRoutes } from './routes/auth.js';
 import { health } from './routes/health.js';
+import { meRoutes } from './routes/me.js';
 import { recoveryRoutes } from './routes/recovery.js';
 import { sessionRoutes } from './routes/sessions.js';
 
@@ -71,6 +72,7 @@ export function createApp(deps: AppDeps) {
   app.route('/', health);
   app.route('/api/v1', authRoutes(ctx));
   app.route('/api/v1', recoveryRoutes(ctx));
+  app.route('/api/v1', meRoutes(ctx));
   app.route('/api/v1', sessionRoutes(ctx));
   app.onError((err, c) => {
     // Errores del propio cliente (JSON mal formado, tipo de contenido): su estado, sin log de error.
