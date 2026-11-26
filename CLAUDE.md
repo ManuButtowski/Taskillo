@@ -100,3 +100,19 @@ pnpm db:generate         # genera la migración SQL en apps/api/drizzle/ tras ca
 pnpm db:migrate          # aplica las migraciones a DATABASE_URL (nunca drizzle-kit push)
 pnpm contrato            # regenera packages/contrato/openapi.json desde las rutas Zod (súbelo si cambia)
 ```
+
+App Flutter (`apps/app`). Si `flutter` no está en el PATH de Git Bash, usa
+`C:/Users/Manuel/dev/flutter/bin/flutter`. Desde `apps/app`:
+
+```bash
+flutter pub get          # dependencias de la app
+flutter analyze          # análisis estático (lints de flutter_lints)
+flutter test             # tests unitarios y de widget de la app
+dart run swagger_parser  # regenera los modelos Dart en lib/data/generated/ desde packages/contrato/openapi.json (configuración: swagger_parser.yaml)
+flutter run -d windows --dart-define=API_BASE_URL=http://localhost:3000   # app de escritorio contra la API local
+flutter run -d <android> --dart-define=API_BASE_URL=http://10.0.2.2:3000 # emulador Android (10.0.2.2 = PC anfitrión)
+```
+
+Los modelos de `lib/data/generated/` se generan, **nunca** se editan a mano: si cambia el
+contrato (`pnpm contrato`), ejecuta `dart run swagger_parser` y sube el resultado.
+`API_BASE_URL` es el origen de la API sin `/api/v1`; sin ella la app usa `http://localhost:3000`.
