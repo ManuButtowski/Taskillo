@@ -56,7 +56,7 @@ QA revisa al acabar cada bloque. Los bloques se hacen en orden.
 
 ## Bloque 7 — CI, despliegue y cierre (FR-014, FR-016, FR-017)
 
-- [ ] T028 `.github/workflows/ci.yml`: job API (service `postgres:16`, `pnpm test`, contrato al día) y job app (`flutter analyze`, `flutter test`, `flutter build apk --debug`) en Linux; hook `pre-push` opcional documentado como plan B.
+- [x] T028 `.github/workflows/ci.yml`: job API (service `postgres:16`, `pnpm test`, contrato al día) y job app (`flutter analyze`, `flutter test`, `flutter build apk --debug`) en Linux; hook `pre-push` opcional documentado como plan B.
 - [ ] T029 Imagen de producción y `deploy/docker-compose.prod.yml` + `deploy/Caddyfile` (HTTPS con Let's Encrypt en `API_DOMAIN`), variables de producción documentadas en `.env.example` y `deploy/README.md` con el runbook (usuario SSH sin privilegios, `.env` del VPS legible solo por ese usuario). `TRUST_PROXY=true` solo se activa con Caddy delante y el puerto de la API sin publicar (si no, la IP de `X-Forwarded-For` sería falseable); va al runbook. El arranque en producción debe negarse a usar el `JWT_SECRET` de ejemplo de `.env.example` (hallazgo 4 del QA del bloque 1).
 - [ ] T030 `.github/workflows/deploy.yml`: construye y publica en GHCR, entra por SSH con `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`, ejecuta `pull`, migraciones y `up -d`. Validado con `actionlint`; el primer despliegue real queda pendiente de Rafa (subdominio y usuario SSH).
 - [ ] T031 Verificación del `quickstart.md` de extremo a extremo (Mailpit, PC y Android), medición de SC-001 y SC-004, revisión de que no hay secretos en el repositorio y lista de deuda técnica para el cierre.

@@ -135,3 +135,8 @@ flutter run -d <android> --dart-define=API_BASE_URL=http://10.0.2.2:3000 # emula
 Los modelos de `lib/data/generated/` se generan, **nunca** se editan a mano: si cambia el
 contrato (`pnpm contrato`), ejecuta `dart run swagger_parser` y sube el resultado.
 `API_BASE_URL` es el origen de la API sin `/api/v1`; sin ella la app usa `http://localhost:3000`.
+
+CI (`.github/workflows/ci.yml`): en cada PR y push a `main` corre la API (typecheck, tests con
+PostgreSQL 16, build, contrato al día) y la app (modelos generados al día, analyze, test, APK
+debug). Plan B local opcional: `scripts/pre-push.sample` (copiar a `.git/hooks/pre-push`; no está
+instalado por defecto).
