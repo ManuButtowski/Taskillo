@@ -4,6 +4,7 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { Database } from './db/client.js';
 import { errorBody, validationHook } from './lib/errors.js';
 import { requestLogger, type Logger } from './lib/logger.js';
+import { defaultTiming, type Timing } from './lib/min-duration.js';
 import { SlidingWindowLimiter } from './lib/rate-limit.js';
 import type { Mailer } from './mail/mailer.js';
 import { authRoutes } from './routes/auth.js';
@@ -23,6 +24,8 @@ export interface AppDeps {
   publicBaseUrl?: string;
   /** Limitador de frecuencia; si no se da, la app crea uno propio. */
   limiter?: SlidingWindowLimiter;
+  /** Reloj y suelo de tiempo de respuesta del registro (los tests inyectan un reloj falso). */
+  timing?: Timing;
 }
 
 /** Dependencias ya resueltas que reciben los módulos de rutas. */
@@ -34,6 +37,7 @@ export interface AppContext {
   trustProxy: boolean;
   publicBaseUrl: string;
   limiter: SlidingWindowLimiter;
+  timing: Timing;
 }
 
 function unavailable<T extends object>(name: string): T {
@@ -53,6 +57,7 @@ export function createApp(deps: AppDeps) {
     trustProxy: deps.trustProxy ?? false,
     publicBaseUrl: deps.publicBaseUrl ?? 'http://localhost:3000',
     limiter: deps.limiter ?? new SlidingWindowLimiter(),
+    timing: deps.timing ?? defaultTiming,
   };
 
   const app = new OpenAPIHono({ defaultHook: validationHook });

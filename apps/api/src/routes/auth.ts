@@ -9,6 +9,7 @@ import { createSession, DeviceIdConflictError, rotateRefreshToken } from '../aut
 import { completeRegistration } from '../auth/registration.js';
 import { users } from '../db/schema.js';
 import { errorBody, validationHook } from '../lib/errors.js';
+import { startMinDuration } from '../lib/min-duration.js';
 import { clientIp, emailFromBody, LIMITS, rateLimit } from '../lib/rate-limit.js';
 import { alreadyRegisteredEmail, registrationCodeEmail } from '../mail/index.js';
 import { sendInBackground } from '../mail/background.js';
@@ -151,6 +152,7 @@ export function authRoutes(ctx: AppContext) {
 
   r.openapi(registerRoute, async (c) => {
     const { email } = c.req.valid('json');
+    const waitFloor = startMinDuration(ctx.timing);
     // Mismo trabajo visible en los dos casos: una consulta y un envío sin esperar.
     const [account] = await ctx.db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
     const message = account
@@ -158,11 +160,16 @@ export function authRoutes(ctx: AppContext) {
       : await createRegisterToken(ctx.db, email).then((t) => (t ? registrationCodeEmail(t.code) : null));
     await purgeExpiredRegisterTokens(ctx.db);
     if (message) sendInBackground(ctx.mailer, ctx.logger, { to: email, ...message });
+    // Suelo fijo: la diferencia de trabajo entre cuenta existente y correo nuevo no se nota fuera.
+    await waitFloor();
     return c.json({}, 202);
   });
 
   r.openapi(completeRoute, async (c) => {
+    const waitFloor = startMinDuration(ctx.timing);
     const result = await completeRegistration(ctx.db, c.req.valid('json'));
+    // "Sin código pendiente" responde antes que "código incorrecto": ambos esperan el mismo suelo.
+    if (result.kind === 'invalid_code') await waitFloor();
     switch (result.kind) {
       case 'ok':
         return c.json({ user: result.user, tokens: await buildTokens(result.session, ctx.jwtSecret) }, 201);
