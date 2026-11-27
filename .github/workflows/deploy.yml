@@ -20,6 +20,8 @@ jobs:
     name: Construir y publicar la imagen
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # Igual que "desplegar": no publicar imágenes desde otras ramas.
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: read
       packages: write # solo este job publica en GHCR
@@ -109,6 +111,7 @@ jobs:
           if grep -q '^API_IMAGE=' .env; then
             sed -i "s|^API_IMAGE=.*|API_IMAGE=${API_IMAGE}|" .env
           else
+            [ -z "$(tail -c1 .env)" ] || echo >> .env  # el .env puede no acabar en salto de línea
             echo "API_IMAGE=${API_IMAGE}" >> .env
           fi
 
