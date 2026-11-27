@@ -73,7 +73,9 @@ const passwordRoute = createRoute({
     401: unauthorized,
     403: errorResponse('invalid_credentials: la contraseña actual no coincide'),
     422: errorResponse('weak_password o validation_error'),
-    429: rateLimitedResponse('Demasiados intentos fallidos'),
+    429: rateLimitedResponse(
+      'Demasiados intentos fallidos: con 5 fallos en curso también se rechaza un cambio con la contraseña correcta',
+    ),
   },
 });
 

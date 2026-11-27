@@ -995,7 +995,7 @@
             }
           },
           "429": {
-            "description": "Demasiados intentos fallidos (cabecera Retry-After)",
+            "description": "Demasiados intentos fallidos: con 5 fallos en curso también se rechaza un cambio con la contraseña correcta (cabecera Retry-After)",
             "headers": {
               "Retry-After": {
                 "description": "Segundos que hay que esperar",

@@ -17,7 +17,7 @@ tests primero (principio VII).
 
 **Language/Version**: TypeScript 5.x sobre Node.js 24 LTS (API); Dart 3 / Flutter estable (app)
 
-**Primary Dependencies**: API: Hono, `@hono/zod-openapi`, Zod, Drizzle ORM + drizzle-kit, `postgres` (driver), `@node-rs/argon2`, `jose` (JWT), `nodemailer`, `uuid` (UUIDv7; PostgreSQL 16 no los genera). App: `dio`, `flutter_riverpod`, `go_router`, `flutter_secure_storage`, `shared_preferences`, `url_launcher`, `swagger_parser` (generación de modelos), `uuid`. Gestor: pnpm workspaces. Resend se llama por `fetch`, sin SDK.
+**Primary Dependencies**: API: Hono, `@hono/zod-openapi`, Zod, Drizzle ORM + drizzle-kit, `postgres` (driver), `@node-rs/argon2`, `jose` (JWT), `nodemailer`, `uuid` (UUIDv7; PostgreSQL 16 no los genera). App: `dio`, `flutter_riverpod`, `go_router`, `flutter_secure_storage`, `shared_preferences`, `swagger_parser` (generación de modelos), `uuid`. Gestor: pnpm workspaces. Resend se llama por `fetch`, sin SDK.
 
 **Storage**: PostgreSQL 16 (Docker local, Neon en producción). **Mientras Rafa no prepare el VPS, el subdominio y el buzón SMTP, todo se desarrolla y prueba en local**: PostgreSQL local (Docker Compose o instalado en el PC) o una rama de desarrollo de Neon (gratuita), y el correo en Mailpit. Ningún flujo de esta spec necesita el VPS ni el SMTP de IONOS para cerrarse salvo el despliegue real (T030), que queda pendiente de Rafa. La app no usa `drift` todavía (llega en la spec 002); en esta spec solo guarda tokens en almacenamiento seguro y el perfil en `shared_preferences`.
 
