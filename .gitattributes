@@ -1,0 +1,20 @@
+# Finales de línea: LF en todo lo que se ejecuta en Linux (Docker, CI, VPS).
+* text=auto
+*.sql text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+Dockerfile text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+# Binarios
+*.png binary
+*.jpg binary
+*.ico binary
+# App Flutter: el código Dart y lo que regeneran flutter y swagger_parser, en LF,
+# para que regenerar no ensucie git status solo por saltos de línea.
+*.dart text eol=lf
+apps/app/windows/flutter/** text eol=lf
+apps/app/linux/flutter/** text eol=lf
+apps/app/macos/Flutter/** text eol=lf

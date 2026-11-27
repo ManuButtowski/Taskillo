@@ -1,0 +1,44 @@
+# Producción en el VPS: la API (imagen de GHCR) detrás de Caddy, que da HTTPS con Let's Encrypt.
+# La base de datos es externa (Neon): DATABASE_URL va en el .env del VPS.
+# Uso (desde el directorio del despliegue en el VPS, junto al .env):
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml run --rm api node dist/migrate.js
+#   docker compose -f docker-compose.prod.yml up -d
+name: taskillo
+services:
+  api:
+    image: ${API_IMAGE:?define API_IMAGE en .env}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Seguro SOLO porque el puerto de la API no se publica y Caddy es lo único que llega a ella.
+      TRUST_PROXY: "true"
+    # SIN "ports:": la API solo es accesible desde Caddy por la red interna de Compose.
+    expose:
+      - "3000"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?define API_DOMAIN en .env}
+      ACME_EMAIL: ${ACME_EMAIL:?define ACME_EMAIL en .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # certificados: no borrar, hay límites de emisión de Let's Encrypt
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

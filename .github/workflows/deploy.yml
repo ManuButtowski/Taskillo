@@ -1,0 +1,131 @@
+# Despliegue de la API en el VPS: construye y publica la imagen en GHCR y la despliega por SSH.
+# Solo se dispara a mano (workflow_dispatch) o al subir un tag v*. NUNCA en ramas ni en PR.
+# Runbook, secretos y preparación del VPS: deploy/README.md
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false # un despliegue en curso no se interrumpe
+
+jobs:
+  imagen:
+    name: Construir y publicar la imagen
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Igual que "desplegar": no publicar imágenes desde otras ramas.
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+      packages: write # solo este job publica en GHCR
+    outputs:
+      imagen: ${{ steps.nombre.outputs.imagen }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Nombre de la imagen (GHCR exige minúsculas)
+        id: nombre
+        env:
+          OWNER: ${{ github.repository_owner }}
+          SHA: ${{ github.sha }}
+        run: echo "imagen=ghcr.io/${OWNER,,}/taskillo-api:sha-${SHA}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ steps.nombre.outputs.imagen }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  desplegar:
+    name: Desplegar en el VPS
+    needs: imagen
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: produccion
+    # Defensa extra: solo desde main o tags v* (el entorno también debe restringirlo, ver deploy/README.md)
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Preparar SSH (huella del servidor fijada por secreto, sin StrictHostKeyChecking=no)
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Copiar compose y Caddyfile
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          scp -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            deploy/docker-compose.prod.yml deploy/Caddyfile \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+
+      - name: Pull, migraciones y up -d
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          IMAGEN: ${{ needs.imagen.outputs.imagen }}
+        run: |
+          {
+            printf 'DEPLOY_PATH=%q\nAPI_IMAGE=%q\n' "$DEPLOY_PATH" "$IMAGEN"
+            cat <<'REMOTO'
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          dc="docker compose -f docker-compose.prod.yml"
+
+          # Imagen desplegada: se escribe en el .env del VPS (el despliegue manual usa la misma).
+          # La anterior se guarda en .deploy-previous-image para poder volver atrás.
+          anterior=$(grep -E '^API_IMAGE=' .env | head -1 | cut -d= -f2- || true)
+          if [ -n "$anterior" ] && [ "$anterior" != "$API_IMAGE" ]; then
+            echo "$anterior" > .deploy-previous-image
+          fi
+          if grep -q '^API_IMAGE=' .env; then
+            sed -i "s|^API_IMAGE=.*|API_IMAGE=${API_IMAGE}|" .env
+          else
+            [ -z "$(tail -c1 .env)" ] || echo >> .env  # el .env puede no acabar en salto de línea
+            echo "API_IMAGE=${API_IMAGE}" >> .env
+          fi
+
+          $dc pull
+          # -T y </dev/null: sin esto, "compose run" lee el resto de este script de la entrada estándar
+          $dc run --rm -T api node dist/migrate.js </dev/null
+          # --wait: falla si la API no queda sana (healthcheck de la imagen)
+          $dc up -d --remove-orphans --wait --wait-timeout 120 </dev/null
+
+          # Limpieza solo de imágenes de la API: conserva la actual y la anterior
+          repo="${API_IMAGE%:*}"
+          conservar=$(cat .deploy-previous-image 2>/dev/null || echo "-")
+          docker image ls "$repo" --format '{{.Repository}}:{{.Tag}}' \
+            | grep -vxF -e "$API_IMAGE" -e "$conservar" | xargs -r docker image rm || true
+          REMOTO
+          } | ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              "${DEPLOY_USER}@${DEPLOY_HOST}" bash -s

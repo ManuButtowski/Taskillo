@@ -1,0 +1,119 @@
+# Integración continua: tests de la API (con PostgreSQL 16 real) y comprobaciones de la app Flutter.
+# Los valores de las variables son de ejemplo, NO secretos: solo sirven para la base efímera del job.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (tests, tipos y contrato)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: taskillo
+          POSTGRES_PASSWORD: taskillo-ci
+          POSTGRES_DB: taskillo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U taskillo -d taskillo"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      mailpit:
+        # Mismo Mailpit que docker-compose.yml: el test de envío SMTP real deja de omitirse.
+        image: axllent/mailpit:v1.34.0
+        ports:
+          - 1025:1025
+          - 8025:8025
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://taskillo:taskillo-ci@localhost:5432/taskillo
+      TEST_DATABASE_URL: postgres://taskillo:taskillo-ci@localhost:5432/taskillo_test
+      JWT_SECRET: secreto-de-ejemplo-solo-para-ci-sin-valor-real-0123456789
+      PGPASSWORD: taskillo-ci
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # pnpm con npm, sin pnpm/action-setup (la v6 fallaba en su "self-installer").
+      # La versión sale de "packageManager" en package.json.
+      - name: Instalar pnpm
+        run: |
+          npm install -g "$(node -p "require('./package.json').packageManager.split('+')[0]")"
+          pnpm --version
+          echo "PNPM_STORE=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.PNPM_STORE }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Crear la base de tests (citext viene en la imagen; la migración lo activa)
+        run: psql -h localhost -U taskillo -d taskillo -v ON_ERROR_STOP=1 -c "CREATE DATABASE taskillo_test"
+
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+      - name: El contrato OpenAPI está al día
+        run: |
+          pnpm contrato
+          git diff --exit-code -- packages/contrato
+
+  app:
+    name: App Flutter (análisis, tests y APK)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/app
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.50.1"
+          channel: stable
+          cache: true
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('apps/app/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - run: flutter pub get
+
+      - name: Los modelos generados están al día
+        run: |
+          dart run swagger_parser
+          git diff --exit-code -- lib/data/generated
+
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build apk --debug

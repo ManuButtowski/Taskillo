@@ -1,0 +1,11 @@
+# Genera los modelos Dart desde el contrato OpenAPI (principio VIII).
+# Regenerar: ver "Comandos" en CLAUDE.md. No editar a mano lib/data/generated/.
+swagger_parser:
+  schema_path: ../../packages/contrato/openapi.json
+  output_directory: lib/data/generated
+  generation:
+    http_client: dio
+    serializer: plain
+    # Solo modelos: el cliente HTTP es propio (lib/core/api_client.dart).
+    operation_filters:
+      include_paths: []
