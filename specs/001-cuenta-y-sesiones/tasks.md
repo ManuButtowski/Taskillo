@@ -50,7 +50,7 @@ QA revisa al acabar cada bloque. Los bloques se hacen en orden.
 ## Bloque 6 — Pantallas (US1, US2, US3)
 
 - [x] T024 [US1] Pantallas de registro en dos pasos e inicio de sesión. Registro paso 1: solo correo y "Te hemos enviado un correo" (mismo texto siempre, con "Volver a enviar" e "Iniciar sesión"). Paso 2: código (acepta con o sin guion y en minúsculas), nombre de usuario, nombre visible y contraseña; "código no válido o caducado" con opción de pedir otro, y nombre de usuario ocupado marcado en su campo. Validación local, mensajes de error en español, indicador de espera, aviso "hace falta conexión" sin red. Tests de widget.
-- [x] T025 [US2] Pantalla "He olvidado mi contraseña" (envía la petición y explica que llegará un correo; el enlace abre el navegador con `url_launcher`). Tests de widget.
+- [x] T025 [US2] Pantalla "He olvidado mi contraseña" (envía la petición y explica que llegará un correo cuyo enlace abre una página web servida por la API, donde se elige la contraseña nueva; la app no abre el enlace ni usa `url_launcher`). Tests de widget.
 - [x] T026 [US3] Perfil: cambiar nombre visible, cambiar contraseña, lista de dispositivos con "Cerrar sesión" en uno y "Cerrar sesión en todos", cerrar sesión local. Pantalla principal provisional "Hola, nombre". Tests de widget.
 - [x] T027 Estados de red y error: servidor caído o sin respuesta en login/registro (mensaje y reintento), sesión expirada que vuelve a login, indicador discreto durante la renovación. Test de widget de cada estado.
 

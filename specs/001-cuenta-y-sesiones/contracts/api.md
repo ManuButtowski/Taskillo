@@ -64,4 +64,10 @@ Formato común de toda respuesta de error JSON: `{ "error": { "code": string, "m
 | 429 | `rate_limited` | rutas limitadas | Demasiados intentos; cabecera `Retry-After` en segundos |
 | 500 | `internal_error` | cualquiera | Error no previsto; el cuerpo no da detalles y el log solo resume el error |
 
+Errores generales (cualquier ruta, sin `code` propio de la ruta): `400 invalid_json` (JSON mal formado), `400 bad_request` (otro 4xx del framework), `415 unsupported_media_type` (`Content-Type` ausente o no admitido) y `500 internal_error` (sin detalles en el cuerpo). Ya constan en la tabla; el cliente los trata por estado HTTP y `code`.
+
+Límite por usuario en `POST /me/password`: mientras el usuario acumula 5 fallos de contraseña actual en 15 min, **incluso un cambio con la contraseña actual correcta recibe `429 rate_limited`** (con `Retry-After`) hasta que expira la ventana. Es el comportamiento implementado y deseado: el límite no distingue si el intento en curso es correcto, para no servir de oráculo a quien tenga un access token robado. La app muestra el mensaje y no toca la sesión.
+
+> Seguimiento (no hecho aquí): reflejar este 429 en la descripción de la ruta dentro de `packages/contrato/openapi.json` exige tocar `apps/api` y regenerar con `pnpm contrato`; ver tarea S2 del cierre.
+
 Decisión sobre `403` en `POST /me/password`: se mantiene `403` y no `401`. La contraseña actual errónea no es un fallo de autenticación de la sesión (el token es válido); un `401` activaría el interceptor de la app (renovar y, si falla, cerrar la sesión) y expulsaría al usuario por equivocarse al teclear. La app muestra el mensaje sin tocar la sesión. `invalid_credentials` se reutiliza porque el significado (credencial errónea) es el mismo.
