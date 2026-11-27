@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 const booleanString = z.enum(['true', 'false']).transform((v) => v === 'true');
 
-// Prefijo del JWT_SECRET de .env.example: en producción no se admite ningún secreto que lo lleve.
-const JWT_SECRET_DE_EJEMPLO = /^valor-de-ejemplo/;
+// Marcas de los secretos de ejemplo del repo (.env.example, ci.yml): en producción no se admite ninguno.
+const JWT_SECRET_DE_EJEMPLO = /ejemplo|example|cambialo|changeme/i;
 
 const envSchema = z
   .object({

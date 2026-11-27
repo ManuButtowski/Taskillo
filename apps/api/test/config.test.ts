@@ -77,3 +77,22 @@ describe('loadConfig en producción', () => {
     expect(() => loadConfig({ ...base, NODE_ENV: 'test', JWT_SECRET: ejemplo })).not.toThrow();
   });
 });
+
+describe('loadConfig en producción: otros secretos de ejemplo del repositorio', () => {
+  const deCi = readFileSync(new URL('../../../.github/workflows/ci.yml', import.meta.url), 'utf8')
+    .split('\n')
+    .find((l) => l.trim().startsWith('JWT_SECRET:'))!
+    .split(':')[1]!
+    .trim();
+
+  it.each([
+    ['el de ci.yml', deCi],
+    ['uno genérico de ejemplo', 'example-secret-example-secret-example-secret'],
+    ['uno con "cambialo"', 'cambialo-cambialo-cambialo-cambialo-cambialo'],
+  ])('se niega con %s', (_nombre, secreto) => {
+    expect(secreto.length).toBeGreaterThanOrEqual(32);
+    expect(() => loadConfig({ ...base, NODE_ENV: 'production', JWT_SECRET: secreto })).toThrow(
+      /JWT_SECRET/,
+    );
+  });
+});
